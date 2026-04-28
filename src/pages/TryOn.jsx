@@ -24,7 +24,8 @@ export default function TryOn() {
     () => [
       { label: "FPS", value: stats.fps },
       { label: "Landmarks", value: stats.landmarkCount || 0 },
-      { label: "Tracking", value: stats.trackingStatus }
+      { label: "Tracking", value: stats.trackingStatus },
+      { label: "Accessory", value: "Earrings" }
     ],
     [stats]
   );
@@ -42,6 +43,20 @@ export default function TryOn() {
           Privacy notice: AuraAR processes facial landmarks only on your device. No
           images, videos, or landmark points are stored or sent to any server.
         </p>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="rounded-3xl bg-aura-secondary/12 p-4">
+            <p className="text-sm uppercase tracking-[0.2em] text-aura-accent">Target</p>
+            <p className="mt-2 font-display text-2xl text-aura-primary">30 FPS</p>
+          </div>
+          <div className="rounded-3xl bg-aura-secondary/12 p-4">
+            <p className="text-sm uppercase tracking-[0.2em] text-aura-accent">Processing</p>
+            <p className="mt-2 font-display text-2xl text-aura-primary">Local Only</p>
+          </div>
+          <div className="rounded-3xl bg-aura-secondary/12 p-4">
+            <p className="text-sm uppercase tracking-[0.2em] text-aura-accent">Current Mode</p>
+            <p className="mt-2 font-display text-2xl text-aura-primary">2D Overlay</p>
+          </div>
+        </div>
         {!cameraAllowed ? (
           <button
             type="button"
@@ -71,7 +86,7 @@ export default function TryOn() {
             </div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {statCards.map((stat) => (
               <article
                 key={stat.label}
@@ -103,6 +118,16 @@ export default function TryOn() {
               <li>Sample PNG earrings anchored to landmarks 234 and 454</li>
               <li>Live FPS counter for quick performance feedback</li>
             </ul>
+          </section>
+
+          <section className="rounded-3xl border border-rose-100 bg-white p-5 shadow-aura">
+            <h2 className="font-display text-2xl text-aura-charcoal">Why this matters</h2>
+            <p className="mt-4 text-sm leading-6 text-stone-600">
+              This page is the core experimental artifact of the thesis. It demonstrates
+              how responsive AR feedback, accessory fit visualization, and local privacy
+              handling can influence confidence and purchase intention in online
+              accessory shopping.
+            </p>
           </section>
         </div>
       </section>
