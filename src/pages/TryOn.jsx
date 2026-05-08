@@ -1,15 +1,7 @@
 import { useMemo, useState } from "react";
 import AccessorySelector from "../components/AccessorySelector";
 import ARCanvas from "../components/ARCanvas";
-
-const accessories = [
-  {
-    id: "rose-drop-earrings",
-    name: "Rose Drop Earrings",
-    category: "earrings",
-    thumbnailUrl: "/assets/earrings/sample-earring.png"
-  }
-];
+import { accessories } from "../data/accessories";
 
 export default function TryOn() {
   const [cameraAllowed, setCameraAllowed] = useState(false);
