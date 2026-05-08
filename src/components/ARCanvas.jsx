@@ -81,7 +81,15 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
     [selectedAccessoryId]
   );
 
-  const { cameraError, isCameraReady, startCamera, stopCamera, switchFacingMode, facingMode } =
+  const {
+    cameraError,
+    isCameraReady,
+    isStartingCamera,
+    startCamera,
+    stopCamera,
+    switchFacingMode,
+    facingMode
+  } =
     useCamera(videoRef);
 
   useEffect(() => {
@@ -216,13 +224,22 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
 
         {!isCameraReady && !cameraError ? (
           <div className="absolute inset-0 flex items-center justify-center bg-black/45 px-6 text-center text-white">
-            Starting camera...
+            {isStartingCamera ? "Starting camera..." : "Camera is ready to start."}
           </div>
         ) : null}
 
         {cameraError ? (
           <div className="absolute inset-0 flex items-center justify-center bg-black/65 px-6 text-center text-white">
-            {cameraError}
+            <div className="max-w-md">
+              <p>{cameraError}</p>
+              <button
+                type="button"
+                onClick={startCamera}
+                className="mt-4 rounded-full bg-white px-5 py-2 text-sm font-semibold text-aura-primary transition hover:bg-rose-50"
+              >
+                Try Again
+              </button>
+            </div>
           </div>
         ) : null}
       </div>
