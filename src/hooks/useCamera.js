@@ -16,8 +16,14 @@ export default function useCamera(videoRef) {
       streamRef.current = null;
     }
 
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.srcObject = null;
+      videoRef.current.onloadedmetadata = null;
+    }
+
     setIsCameraReady(false);
-  }, []);
+  }, [videoRef]);
 
   const getCameraErrorMessage = useCallback((error) => {
     if (!window.isSecureContext) {
@@ -70,6 +76,8 @@ export default function useCamera(videoRef) {
       return;
     }
 
+    let stream;
+
     try {
       isStartingCameraRef.current = true;
       setIsStartingCamera(true);
@@ -79,8 +87,6 @@ export default function useCamera(videoRef) {
       if (!navigator.mediaDevices?.getUserMedia || !window.isSecureContext) {
         throw new Error("Camera unavailable");
       }
-
-      let stream;
 
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -106,6 +112,8 @@ export default function useCamera(videoRef) {
       await attachStreamToVideo(stream);
       setIsCameraReady(true);
     } catch (error) {
+      stream?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
       setCameraError(getCameraErrorMessage(error));
       setIsCameraReady(false);
     } finally {
