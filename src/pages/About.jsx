@@ -37,7 +37,7 @@ export default function About() {
             <h2 className="font-display text-2xl text-aura-primary">Methodology</h2>
             <div className="mt-4 space-y-3 text-stone-600">
               <p>Approach: Desk-Based Agile development</p>
-              <p>Sprints: Research -> Prototype -> Testing -> Refinement</p>
+              <p>Sprints: Research to Prototype to Testing to Refinement</p>
               <p>Evaluation: usability observation, SUS survey, and feature validation</p>
             </div>
           </article>
