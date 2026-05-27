@@ -6,8 +6,8 @@ export async function getProducts() {
       category: "earrings",
       price: 1999,
       currency: "NPR",
-      modelUrl: "/assets/earrings/sample-earring.png",
-      thumbnailUrl: "/assets/earrings/sample-earring.png",
+      modelKind: "earrings",
+      thumbnailUrl: "/assets/products/rose-drop-earrings.svg",
       arSupported: true
     },
     {
@@ -16,8 +16,8 @@ export async function getProducts() {
       category: "sunglasses",
       price: 2499,
       currency: "NPR",
-      modelUrl: "/assets/earrings/sample-earring.png",
-      thumbnailUrl: "/assets/earrings/sample-earring.png",
+      modelKind: "sunglasses",
+      thumbnailUrl: "/assets/products/midnight-sunglasses.svg",
       arSupported: true
     },
     {
@@ -26,8 +26,8 @@ export async function getProducts() {
       category: "necklace",
       price: 3199,
       currency: "NPR",
-      modelUrl: "/assets/earrings/sample-earring.png",
-      thumbnailUrl: "/assets/earrings/sample-earring.png",
+      modelKind: "necklace",
+      thumbnailUrl: "/assets/products/gold-pendant-necklace.svg",
       arSupported: true
     },
     {
@@ -36,7 +36,7 @@ export async function getProducts() {
       category: "watch",
       price: 4299,
       currency: "NPR",
-      modelUrl: "/assets/earrings/sample-earring.png",
+      modelKind: "watch",
       thumbnailUrl: "/assets/earrings/sample-earring.png",
       arSupported: false
     }

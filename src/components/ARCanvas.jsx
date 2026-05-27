@@ -15,7 +15,7 @@ function drawLandmarks(ctx, landmarks, width, height) {
   }
 }
 
-function makeFallbackEarring() {
+function makeRoseDropEarrings() {
   const group = new THREE.Group();
   const metal = new THREE.MeshStandardMaterial({
     color: "#d8a441",
@@ -44,6 +44,105 @@ function makeFallbackEarring() {
   return group;
 }
 
+function makeMidnightSunglasses() {
+  const group = new THREE.Group();
+  const frame = new THREE.MeshStandardMaterial({
+    color: "#111111",
+    metalness: 0.55,
+    roughness: 0.3
+  });
+  const lens = new THREE.MeshPhysicalMaterial({
+    color: "#151923",
+    metalness: 0.1,
+    roughness: 0.12,
+    transmission: 0.15,
+    transparent: true,
+    opacity: 0.72
+  });
+
+  const leftLens = new THREE.Mesh(new THREE.SphereGeometry(0.36, 32, 20), lens);
+  leftLens.scale.set(1, 0.68, 0.08);
+  leftLens.position.x = -0.44;
+  group.add(leftLens);
+
+  const rightLens = leftLens.clone();
+  rightLens.position.x = 0.44;
+  group.add(rightLens);
+
+  const leftRim = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.035, 12, 48), frame);
+  leftRim.scale.y = 0.68;
+  leftRim.position.x = -0.44;
+  group.add(leftRim);
+
+  const rightRim = leftRim.clone();
+  rightRim.position.x = 0.44;
+  group.add(rightRim);
+
+  const bridge = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.025, 10, 32, Math.PI), frame);
+  bridge.rotation.z = Math.PI;
+  bridge.position.y = 0.02;
+  group.add(bridge);
+
+  const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.05, 0.05), frame);
+  leftArm.position.set(-0.98, 0.03, -0.04);
+  leftArm.rotation.z = 0.08;
+  group.add(leftArm);
+
+  const rightArm = leftArm.clone();
+  rightArm.position.x = 0.98;
+  rightArm.rotation.z = -0.08;
+  group.add(rightArm);
+
+  return group;
+}
+
+function makeGoldPendantNecklace() {
+  const group = new THREE.Group();
+  const gold = new THREE.MeshStandardMaterial({
+    color: "#d7a339",
+    metalness: 0.88,
+    roughness: 0.24
+  });
+  const pearl = new THREE.MeshStandardMaterial({
+    color: "#fff3dc",
+    metalness: 0.18,
+    roughness: 0.18
+  });
+
+  const chain = new THREE.Mesh(new THREE.TorusGeometry(0.82, 0.022, 16, 96, Math.PI), gold);
+  chain.rotation.z = Math.PI;
+  chain.scale.y = 0.58;
+  chain.position.y = 0.18;
+  group.add(chain);
+
+  const bail = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.018, 12, 32), gold);
+  bail.position.y = -0.3;
+  group.add(bail);
+
+  const pendant = new THREE.Mesh(new THREE.SphereGeometry(0.2, 32, 24), pearl);
+  pendant.scale.set(0.82, 1.18, 0.28);
+  pendant.position.y = -0.58;
+  group.add(pendant);
+
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.16, 0.08, 24), gold);
+  cap.position.y = -0.38;
+  group.add(cap);
+
+  return group;
+}
+
+function makeAccessoryModel(accessory) {
+  switch (accessory.modelKind) {
+    case "sunglasses":
+      return makeMidnightSunglasses();
+    case "necklace":
+      return makeGoldPendantNecklace();
+    case "earrings":
+    default:
+      return makeRoseDropEarrings();
+  }
+}
+
 function normalizeModel(object) {
   const box = new THREE.Box3().setFromObject(object);
   const size = box.getSize(new THREE.Vector3());
@@ -54,11 +153,13 @@ function normalizeModel(object) {
   object.scale.multiplyScalar(1 / height);
 }
 
-function getEarTransforms(face, width, height, accessory) {
+function getAccessoryTransforms(face, width, height, accessory) {
   const leftEar = face[234];
   const rightEar = face[454];
   const leftCheek = face[127] ?? leftEar;
   const rightCheek = face[356] ?? rightEar;
+  const nose = face[1] ?? face[4] ?? leftEar;
+  const chin = face[152] ?? nose;
 
   const leftX = leftEar.x * width;
   const leftY = leftEar.y * height;
@@ -69,6 +170,44 @@ function getEarTransforms(face, width, height, accessory) {
     rightCheek.y * height - leftCheek.y * height
   );
   const angle = Math.atan2(rightY - leftY, rightX - leftX);
+
+  if (accessory.placement === "eyes") {
+    const leftEye = face[33] ?? leftEar;
+    const rightEye = face[263] ?? rightEar;
+    const centerX = ((leftEye.x + rightEye.x) / 2) * width;
+    const centerY = ((leftEye.y + rightEye.y) / 2) * height;
+    const eyeAngle = Math.atan2(
+      rightEye.y * height - leftEye.y * height,
+      rightEye.x * width - leftEye.x * width
+    );
+
+    return [
+      {
+        x: centerX - width / 2,
+        y: height / 2 - centerY + faceWidth * (accessory.yOffset ?? 0),
+        scale: THREE.MathUtils.clamp(faceWidth * 0.24 * accessory.modelScale, 34, 82),
+        rotation: -eyeAngle,
+        mirror: 1,
+        holder: "center"
+      }
+    ];
+  }
+
+  if (accessory.placement === "neck") {
+    const neckY = chin.y * height + faceWidth * 0.24;
+
+    return [
+      {
+        x: nose.x * width - width / 2,
+        y: height / 2 - neckY,
+        scale: THREE.MathUtils.clamp(faceWidth * 0.36 * accessory.modelScale, 48, 128),
+        rotation: -angle * 0.35,
+        mirror: 1,
+        holder: "center"
+      }
+    ];
+  }
+
   const earringHeight = THREE.MathUtils.clamp(faceWidth * 0.23 * accessory.modelScale, 34, 96);
   const yOffset = earringHeight * accessory.yOffset;
 
@@ -78,14 +217,16 @@ function getEarTransforms(face, width, height, accessory) {
       y: height / 2 - leftY - yOffset,
       scale: earringHeight,
       rotation: -angle,
-      mirror: -1
+      mirror: -1,
+      holder: "left"
     },
     {
       x: rightX - width / 2,
       y: height / 2 - rightY - yOffset,
       scale: earringHeight,
       rotation: -angle,
-      mirror: 1
+      mirror: 1,
+      holder: "right"
     }
   ];
 }
@@ -136,10 +277,12 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
     camera.position.z = 500;
 
     const leftModel = new THREE.Group();
+    const centerModel = new THREE.Group();
     const rightModel = new THREE.Group();
     leftModel.visible = false;
+    centerModel.visible = false;
     rightModel.visible = false;
-    scene.add(leftModel, rightModel);
+    scene.add(leftModel, centerModel, rightModel);
 
     scene.add(new THREE.HemisphereLight(0xffffff, 0x332222, 2.2));
     const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
@@ -148,6 +291,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
 
     threeRef.current = {
       camera,
+      centerModel,
       leftModel,
       renderer,
       rightModel,
@@ -174,37 +318,45 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
         return;
       }
 
-      for (const holder of [three.leftModel, three.rightModel]) {
+      for (const holder of [three.leftModel, three.centerModel, three.rightModel]) {
         holder.clear();
         holder.add(template.clone(true));
         holder.visible = false;
       }
     };
 
-    loader.load(
-      selectedAccessory.modelUrl,
-      (gltf) => {
-        if (cancelled) {
-          return;
-        }
+    const useGeneratedModel = () => {
+      const generated = makeAccessoryModel(selectedAccessory);
+      normalizeModel(generated);
+      setSceneModels(generated);
+      setModelStatus(`${selectedAccessory.name} 3D model active`);
+    };
 
-        const model = gltf.scene;
-        normalizeModel(model);
-        setSceneModels(model);
-        setModelStatus("Sketchfab 3D model active");
-      },
-      undefined,
-      () => {
-        if (cancelled) {
-          return;
-        }
+    if (!selectedAccessory.modelUrl) {
+      useGeneratedModel();
+    } else {
+      loader.load(
+        selectedAccessory.modelUrl,
+        (gltf) => {
+          if (cancelled) {
+            return;
+          }
 
-        const fallback = makeFallbackEarring();
-        normalizeModel(fallback);
-        setSceneModels(fallback);
-        setModelStatus("Add Sketchfab GLB at public/assets/earrings/sketchfab-earrings.glb");
-      }
-    );
+          const model = gltf.scene;
+          normalizeModel(model);
+          setSceneModels(model);
+          setModelStatus(`${selectedAccessory.name} GLB active`);
+        },
+        undefined,
+        () => {
+          if (cancelled) {
+            return;
+          }
+
+          useGeneratedModel();
+        }
+      );
+    }
 
     return () => {
       cancelled = true;
@@ -214,11 +366,16 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
   const renderAccessoryModel = useCallback((face, width, height) => {
     const three = threeRef.current;
 
-    if (!three || !three.leftModel.children.length || !three.rightModel.children.length) {
+    if (
+      !three ||
+      !three.leftModel.children.length ||
+      !three.centerModel.children.length ||
+      !three.rightModel.children.length
+    ) {
       return;
     }
 
-    const { camera, leftModel, renderer, rightModel, scene } = three;
+    const { camera, centerModel, leftModel, renderer, rightModel, scene } = three;
     renderer.setSize(width, height, false);
 
     camera.left = -width / 2;
@@ -227,16 +384,20 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
     camera.bottom = -height / 2;
     camera.updateProjectionMatrix();
 
-    leftModel.visible = true;
-    rightModel.visible = true;
+    leftModel.visible = false;
+    centerModel.visible = false;
+    rightModel.visible = false;
 
-    const [leftTransform, rightTransform] = getEarTransforms(face, width, height, selectedAccessory);
-    const transforms = [leftTransform, rightTransform];
-    const holders = [leftModel, rightModel];
+    const holders = {
+      center: centerModel,
+      left: leftModel,
+      right: rightModel
+    };
 
-    holders.forEach((holder, index) => {
-      const transform = transforms[index];
+    getAccessoryTransforms(face, width, height, selectedAccessory).forEach((transform) => {
+      const holder = holders[transform.holder];
 
+      holder.visible = true;
       holder.position.set(transform.x, transform.y, 0);
       holder.rotation.set(0, 0, transform.rotation);
       holder.scale.set(transform.scale * transform.mirror, transform.scale, transform.scale);
@@ -272,6 +433,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
 
         if (three) {
           three.leftModel.visible = false;
+          three.centerModel.visible = false;
           three.rightModel.visible = false;
           three.renderer.render(three.scene, three.camera);
         }

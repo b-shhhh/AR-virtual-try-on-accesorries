@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import AccessorySelector from "../components/AccessorySelector";
 import ARCanvas from "../components/ARCanvas";
-import { accessories } from "../data/accessories";
+import { accessories, getAccessoryById } from "../data/accessories";
 
 export default function TryOn() {
   const [cameraAllowed, setCameraAllowed] = useState(false);
@@ -11,15 +11,16 @@ export default function TryOn() {
     landmarkCount: 0,
     trackingStatus: "Idle"
   });
+  const selectedAccessory = getAccessoryById(selectedAccessoryId);
 
   const statCards = useMemo(
     () => [
       { label: "FPS", value: stats.fps },
       { label: "Landmarks", value: stats.landmarkCount || 0 },
       { label: "Tracking", value: stats.trackingStatus },
-      { label: "Accessory", value: "Earrings" }
+      { label: "Accessory", value: selectedAccessory.name }
     ],
-    [stats]
+    [selectedAccessory.name, stats]
   );
 
   return (
@@ -46,7 +47,7 @@ export default function TryOn() {
           </div>
           <div className="rounded-3xl bg-aura-secondary/12 p-4">
             <p className="text-sm uppercase tracking-[0.2em] text-aura-accent">Current Mode</p>
-            <p className="mt-2 font-display text-2xl text-aura-primary">2D Overlay</p>
+            <p className="mt-2 font-display text-2xl text-aura-primary">3D Try-On</p>
           </div>
         </div>
         {!cameraAllowed ? (
@@ -107,7 +108,7 @@ export default function TryOn() {
             <ul className="mt-4 space-y-2 text-sm text-stone-600">
               <li>Webcam access with front and rear camera toggle</li>
               <li>468 MediaPipe face landmarks drawn on top of the video</li>
-              <li>Sample PNG earrings anchored to landmarks 234 and 454</li>
+              <li>Product-specific 3D earrings, sunglasses, and necklace placement</li>
               <li>Live FPS counter for quick performance feedback</li>
             </ul>
           </section>
