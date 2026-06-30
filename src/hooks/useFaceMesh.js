@@ -1,54 +1,90 @@
 import { useEffect, useRef, useState } from "react";
-import { FaceMesh } from "@mediapipe/face_mesh";
+
+const TASKS_VISION_CDN = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22";
+const FACE_LANDMARKER_MODEL =
+  "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task";
 
 export default function useFaceMesh({ videoRef, enabled, onResults }) {
-  const faceMeshRef = useRef(null);
+  const faceLandmarkerRef = useRef(null);
   const frameRef = useRef(null);
+  const [isDetectorReady, setIsDetectorReady] = useState(false);
   const [landmarkCount, setLandmarkCount] = useState(0);
   const [trackingStatus, setTrackingStatus] = useState("Idle");
 
   useEffect(() => {
-    const faceMesh = new FaceMesh({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-    });
+    let cancelled = false;
 
-    faceMesh.setOptions({
-      maxNumFaces: 1,
-      refineLandmarks: true,
-      minDetectionConfidence: 0.6,
-      minTrackingConfidence: 0.6
-    });
+    const loadFaceLandmarker = async () => {
+      setTrackingStatus("Loading detector");
 
-    faceMesh.onResults((results) => {
-      const face = results.multiFaceLandmarks?.[0];
-      setLandmarkCount(face ? face.length : 0);
-      setTrackingStatus(face ? "Tracking" : "Searching");
-      onResults?.(results);
-    });
+      try {
+        const { FaceLandmarker, FilesetResolver } = await import(
+          /* @vite-ignore */ TASKS_VISION_CDN
+        );
+        const vision = await FilesetResolver.forVisionTasks(`${TASKS_VISION_CDN}/wasm`);
+        const faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: FACE_LANDMARKER_MODEL,
+            delegate: "GPU"
+          },
+          numFaces: 1,
+          outputFaceBlendshapes: false,
+          outputFacialTransformationMatrixes: false,
+          runningMode: "VIDEO",
+          minFaceDetectionConfidence: 0.6,
+          minFacePresenceConfidence: 0.6,
+          minTrackingConfidence: 0.6
+        });
 
-    faceMeshRef.current = faceMesh;
+        if (cancelled) {
+          faceLandmarker.close();
+          return;
+        }
+
+        faceLandmarkerRef.current = faceLandmarker;
+        setIsDetectorReady(true);
+        setTrackingStatus("Searching");
+      } catch (error) {
+        setTrackingStatus("Detector failed");
+      }
+    };
+
+    loadFaceLandmarker();
 
     return () => {
+      cancelled = true;
       cancelAnimationFrame(frameRef.current);
-      faceMeshRef.current?.close();
-      faceMeshRef.current = null;
+      faceLandmarkerRef.current?.close();
+      faceLandmarkerRef.current = null;
+      setIsDetectorReady(false);
     };
-  }, [onResults]);
+  }, []);
 
   useEffect(() => {
-    if (!enabled || !videoRef.current || !faceMeshRef.current) {
+    if (!enabled || !isDetectorReady || !videoRef.current || !faceLandmarkerRef.current) {
       return undefined;
     }
 
     let cancelled = false;
 
     const processFrame = async () => {
-      if (cancelled || !videoRef.current || !faceMeshRef.current) {
+      if (cancelled || !videoRef.current || !faceLandmarkerRef.current) {
         return;
       }
 
       if (videoRef.current.readyState >= 2) {
-        await faceMeshRef.current.send({ image: videoRef.current });
+        const results = faceLandmarkerRef.current.detectForVideo(
+          videoRef.current,
+          performance.now()
+        );
+        const face = results.faceLandmarks?.[0];
+
+        setLandmarkCount(face ? face.length : 0);
+        setTrackingStatus(face ? "Tracking" : "Searching");
+        onResults?.({
+          ...results,
+          multiFaceLandmarks: results.faceLandmarks
+        });
       }
 
       frameRef.current = requestAnimationFrame(processFrame);
@@ -60,7 +96,7 @@ export default function useFaceMesh({ videoRef, enabled, onResults }) {
       cancelled = true;
       cancelAnimationFrame(frameRef.current);
     };
-  }, [enabled, videoRef]);
+  }, [enabled, isDetectorReady, onResults, videoRef]);
 
   return {
     landmarkCount,
