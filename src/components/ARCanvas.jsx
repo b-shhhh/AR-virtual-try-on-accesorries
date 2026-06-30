@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { getAccessoryById } from "../data/accessories";
 import useCamera from "../hooks/useCamera";
 import useFaceMesh from "../hooks/useFaceMesh";
@@ -63,6 +64,30 @@ function getAccessoryTransforms(face, width, height, accessory) {
         y: height / 2 - neckY,
         drawWidth: clamp(faceWidth * 0.72 * accessory.modelScale, 110, 260),
         rotation: -angle * 0.35,
+        mirror: 1,
+        holder: "center"
+      }
+    ];
+  }
+
+  if (accessory.placement === "nose") {
+    const noseTip = face[1] ?? face[4] ?? nose;
+    const leftNostril = face[98] ?? noseTip;
+    const rightNostril = face[327] ?? noseTip;
+    const noseSide = accessory.xOffset < 0 ? leftNostril : rightNostril;
+    const noseWidth = Math.hypot(
+      rightNostril.x * width - leftNostril.x * width,
+      rightNostril.y * height - leftNostril.y * height
+    );
+    const centerX = noseSide.x * width + faceWidth * (accessory.xOffset ?? 0);
+    const centerY = noseSide.y * height + faceWidth * (accessory.yOffset ?? 0);
+
+    return [
+      {
+        x: centerX - width / 2,
+        y: height / 2 - centerY,
+        drawWidth: clamp(noseWidth * 0.95 * accessory.modelScale, 24, 58),
+        rotation: -angle * 0.2,
         mirror: 1,
         holder: "center"
       }
@@ -185,6 +210,32 @@ function createEarringModel() {
   return group;
 }
 
+function normalizeModelToHeight(model, targetHeight = 100) {
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const height = size.y || 1;
+
+  model.position.sub(center);
+  model.scale.multiplyScalar(targetHeight / height);
+}
+
+function prepareModelMaterials(model) {
+  model.traverse((child) => {
+    if (!child.isMesh) {
+      return;
+    }
+
+    child.castShadow = false;
+    child.receiveShadow = false;
+
+    if (child.material) {
+      child.material.needsUpdate = true;
+      child.material.side = THREE.DoubleSide;
+    }
+  });
+}
+
 function createThreeTryOnScene(canvas) {
   const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -198,9 +249,13 @@ function createThreeTryOnScene(canvas) {
   const camera = new THREE.OrthographicCamera(-480, 480, 360, -360, -1000, 1000);
   camera.position.z = 500;
 
-  const leftEarring = createEarringModel();
-  const rightEarring = createEarringModel();
-  scene.add(leftEarring, rightEarring);
+  const leftEarring = new THREE.Group();
+  const rightEarring = new THREE.Group();
+  const centerAccessory = new THREE.Group();
+  leftEarring.visible = false;
+  rightEarring.visible = false;
+  centerAccessory.visible = false;
+  scene.add(leftEarring, rightEarring, centerAccessory);
 
   const keyLight = new THREE.DirectionalLight(0xffffff, 2.8);
   keyLight.position.set(140, 180, 320);
@@ -216,11 +271,29 @@ function createThreeTryOnScene(canvas) {
     renderer,
     scene,
     camera,
+    centerAccessory,
     earrings: {
       left: leftEarring,
       right: rightEarring
     }
   };
+}
+
+function setEarringSceneModels(threeScene, template) {
+  const leftModel = template.clone(true);
+  const rightModel = template.clone(true);
+
+  threeScene.earrings.left.clear();
+  threeScene.earrings.right.clear();
+  threeScene.earrings.left.add(leftModel);
+  threeScene.earrings.right.add(rightModel);
+}
+
+function setCenterSceneModel(threeScene, template) {
+  const model = template.clone(true);
+
+  threeScene.centerAccessory.clear();
+  threeScene.centerAccessory.add(model);
 }
 
 function resizeThreeScene(threeScene, width, height) {
@@ -276,11 +349,43 @@ function updateThreeEarrings(threeScene, face, width, height, selectedAccessory)
   threeScene.renderer.render(threeScene.scene, threeScene.camera);
 }
 
+function updateThreeAccessory(threeScene, face, width, height, selectedAccessory) {
+  if (selectedAccessory.placement === "ears") {
+    threeScene.centerAccessory.visible = false;
+    updateThreeEarrings(threeScene, face, width, height, selectedAccessory);
+    return;
+  }
+
+  const transform = getAccessoryTransforms(face, width, height, selectedAccessory)[0];
+  const pose = estimateHeadPose(face, width, height);
+
+  threeScene.earrings.left.visible = false;
+  threeScene.earrings.right.visible = false;
+
+  if (!transform) {
+    threeScene.centerAccessory.visible = false;
+    threeScene.renderer.render(threeScene.scene, threeScene.camera);
+    return;
+  }
+
+  const scale = (transform.drawHeight ?? transform.drawWidth ?? 88) / 100;
+  threeScene.centerAccessory.visible = true;
+  threeScene.centerAccessory.position.set(transform.x, transform.y, 0);
+  threeScene.centerAccessory.scale.set(scale * transform.mirror, scale, scale);
+  threeScene.centerAccessory.rotation.set(
+    pose.pitch * 0.35,
+    pose.yaw * 0.45,
+    transform.rotation
+  );
+  threeScene.renderer.render(threeScene.scene, threeScene.camera);
+}
+
 export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const threeCanvasRef = useRef(null);
   const threeSceneRef = useRef(null);
+  const threeModelReadyRef = useRef(false);
   const productImageRef = useRef(null);
   const [productStatus, setProductStatus] = useState("Loading product photo");
   const fpsRef = useRef({
@@ -330,18 +435,61 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
     image.decoding = "async";
 
     productImageRef.current = null;
-    setProductStatus(
-      selectedAccessory.placement === "ears" ? "Loading 3D earring model" : "Loading product photo"
-    );
+    threeModelReadyRef.current = false;
+    setProductStatus(selectedAccessory.modelUrl ? "Loading 3D jewelry asset" : "Loading product photo");
+
+    if (selectedAccessory.modelUrl) {
+      const threeScene = threeSceneRef.current;
+      const loader = new GLTFLoader();
+
+      const useFallbackModel = () => {
+        if (!threeScene || cancelled || selectedAccessory.placement !== "ears") {
+          setProductStatus("3D asset missing, using product preview");
+          return;
+        }
+
+        const fallback = createEarringModel();
+        normalizeModelToHeight(fallback);
+        prepareModelMaterials(fallback);
+        setEarringSceneModels(threeScene, fallback);
+        threeModelReadyRef.current = true;
+        setProductStatus(`${selectedAccessory.name} placeholder 3D active`);
+      };
+
+      if (!selectedAccessory.modelUrl || !threeScene) {
+        useFallbackModel();
+      } else {
+        loader.load(
+          selectedAccessory.modelUrl,
+          (gltf) => {
+            if (cancelled) {
+              return;
+            }
+
+            const model = gltf.scene;
+            normalizeModelToHeight(model);
+            prepareModelMaterials(model);
+            if (selectedAccessory.placement === "ears") {
+              setEarringSceneModels(threeScene, model);
+            } else {
+              setCenterSceneModel(threeScene, model);
+            }
+            threeModelReadyRef.current = true;
+            setProductStatus(`${selectedAccessory.name} GLB active`);
+          },
+          undefined,
+          useFallbackModel
+        );
+      }
+    }
 
     image.onload = () => {
       if (!cancelled) {
         productImageRef.current = image;
-        setProductStatus(
-          selectedAccessory.placement === "ears"
-            ? `${selectedAccessory.name} 3D model active`
-            : `${selectedAccessory.name} product photo active`
-        );
+
+        if (!selectedAccessory.modelUrl || !threeModelReadyRef.current) {
+          setProductStatus(`${selectedAccessory.name} product photo active`);
+        }
       }
     };
 
@@ -406,8 +554,8 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
 
       drawLandmarks(ctx, face, width, height);
 
-      if (selectedAccessory.placement === "ears" && threeSceneRef.current) {
-        updateThreeEarrings(threeSceneRef.current, face, width, height, selectedAccessory);
+      if (threeModelReadyRef.current && threeSceneRef.current) {
+        updateThreeAccessory(threeSceneRef.current, face, width, height, selectedAccessory);
       } else {
         renderProductImage(ctx, face, width, height);
       }

@@ -6,9 +6,9 @@ export default function AccessorySelector({
   return (
     <section className="rounded-3xl border border-rose-100 bg-white p-5 shadow-aura">
       <div className="mb-4">
-        <h2 className="font-display text-2xl text-aura-charcoal">Accessories</h2>
+        <h2 className="font-display text-2xl text-aura-charcoal">Jewelry</h2>
         <p className="text-sm text-stone-600">
-          Select a product photo to place on the face landmarks.
+          Select a piece to preview with the live try-on camera.
         </p>
       </div>
 
