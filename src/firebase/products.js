@@ -2,32 +2,32 @@ export async function getProducts() {
   return [
     {
       id: "rose-drop-earrings",
-      name: "Rose Drop Earrings",
+      name: "Chandbali Gold Earrings",
       category: "earrings",
       price: 1999,
       currency: "NPR",
-      modelKind: "earrings",
-      thumbnailUrl: "/assets/products/rose-drop-earrings.svg",
+      thumbnailUrl: "https://upload.wikimedia.org/wikipedia/commons/4/40/Chandbali_Earrings.jpg",
+      tryOnImageUrl: "https://upload.wikimedia.org/wikipedia/commons/4/40/Chandbali_Earrings.jpg",
       arSupported: true
     },
     {
       id: "midnight-sunglasses",
-      name: "Midnight Sunglasses",
+      name: "Oakley Shield Sunglasses",
       category: "sunglasses",
       price: 2499,
       currency: "NPR",
-      modelKind: "sunglasses",
-      thumbnailUrl: "/assets/products/midnight-sunglasses.svg",
+      thumbnailUrl: "https://upload.wikimedia.org/wikipedia/commons/7/71/Oakley_sunglasses.jpg",
+      tryOnImageUrl: "https://upload.wikimedia.org/wikipedia/commons/7/71/Oakley_sunglasses.jpg",
       arSupported: true
     },
     {
       id: "gold-pendant-necklace",
-      name: "Gold Pendant Necklace",
+      name: "Extendible Gold Necklace",
       category: "necklace",
       price: 3199,
       currency: "NPR",
-      modelKind: "necklace",
-      thumbnailUrl: "/assets/products/gold-pendant-necklace.svg",
+      thumbnailUrl: "https://upload.wikimedia.org/wikipedia/commons/0/08/Extendible_gold_necklace_with_two_clasps.jpg",
+      tryOnImageUrl: "https://upload.wikimedia.org/wikipedia/commons/0/08/Extendible_gold_necklace_with_two_clasps.jpg",
       arSupported: true
     },
     {

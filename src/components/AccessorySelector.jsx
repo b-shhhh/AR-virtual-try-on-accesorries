@@ -8,7 +8,7 @@ export default function AccessorySelector({
       <div className="mb-4">
         <h2 className="font-display text-2xl text-aura-charcoal">Accessories</h2>
         <p className="text-sm text-stone-600">
-          Select an item to overlay on the face landmarks.
+          Select a product photo to place on the face landmarks.
         </p>
       </div>
 

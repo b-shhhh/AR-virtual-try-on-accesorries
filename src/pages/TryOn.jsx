@@ -47,7 +47,7 @@ export default function TryOn() {
           </div>
           <div className="rounded-3xl bg-aura-secondary/12 p-4">
             <p className="text-sm uppercase tracking-[0.2em] text-aura-accent">Current Mode</p>
-            <p className="mt-2 font-display text-2xl text-aura-primary">3D Try-On</p>
+            <p className="mt-2 font-display text-2xl text-aura-primary">Product Try-On</p>
           </div>
         </div>
         {!cameraAllowed ? (
@@ -108,7 +108,9 @@ export default function TryOn() {
             <ul className="mt-4 space-y-2 text-sm text-stone-600">
               <li>Webcam access with front and rear camera toggle</li>
               <li>468 MediaPipe face landmarks drawn on top of the video</li>
-              <li>Product-specific 3D earrings, sunglasses, and necklace placement</li>
+              <li>Three.js 3D earrings anchored to ear-side face landmarks</li>
+              <li>Head roll, yaw, and pitch estimates mapped to the earring model</li>
+              <li>Product photo fallback for glasses and necklace placements</li>
               <li>Live FPS counter for quick performance feedback</li>
             </ul>
           </section>
