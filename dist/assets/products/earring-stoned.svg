@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 320" role="img" aria-labelledby="title desc">
+  <title id="title">Stoned Earring</title>
+  <desc id="desc">A pair of slim gold drop earrings with ruby stones.</desc>
+  <defs>
+    <linearGradient id="gold" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffe48d"/>
+      <stop offset=".5" stop-color="#c89131"/>
+      <stop offset="1" stop-color="#80501f"/>
+    </linearGradient>
+    <radialGradient id="ruby" cx="35%" cy="25%" r="70%">
+      <stop offset="0" stop-color="#ff95b9"/>
+      <stop offset=".5" stop-color="#c2185b"/>
+      <stop offset="1" stop-color="#741437"/>
+    </radialGradient>
+  </defs>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="translate(60 148)">
+      <circle cy="-38" r="11" fill="url(#ruby)" stroke="#f6ca62" stroke-width="4"/>
+      <path d="M0-23c-8 23-8 52 0 80c8-28 8-57 0-80z" fill="url(#gold)" stroke="#8a5b21" stroke-width="3"/>
+      <circle cy="70" r="16" fill="url(#ruby)" stroke="#f6ca62" stroke-width="5"/>
+    </g>
+    <g transform="translate(180 148)">
+      <circle cy="-38" r="11" fill="url(#ruby)" stroke="#f6ca62" stroke-width="4"/>
+      <path d="M0-23c-8 23-8 52 0 80c8-28 8-57 0-80z" fill="url(#gold)" stroke="#8a5b21" stroke-width="3"/>
+      <circle cy="70" r="16" fill="url(#ruby)" stroke="#f6ca62" stroke-width="5"/>
+    </g>
+  </g>
+</svg>

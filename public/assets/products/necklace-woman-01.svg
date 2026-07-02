@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 210" role="img" aria-labelledby="title desc">
+  <title id="title">Woman Necklace 01</title>
+  <desc id="desc">A layered gold choker necklace.</desc>
+  <defs>
+    <linearGradient id="gold" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#fff0a6"/>
+      <stop offset=".5" stop-color="#c89131"/>
+      <stop offset="1" stop-color="#7c4f1d"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M54 31c18 64 194 64 212 0" stroke="url(#gold)" stroke-width="12"/>
+    <path d="M69 56c32 57 150 57 182 0" stroke="url(#gold)" stroke-width="9"/>
+    <path d="M91 82c38 44 100 44 138 0" stroke="#f7d66b" stroke-width="5"/>
+    <g fill="url(#gold)" stroke="#8a5d22" stroke-width="2">
+      <circle cx="112" cy="112" r="8"/>
+      <circle cx="137" cy="124" r="8"/>
+      <circle cx="160" cy="128" r="9"/>
+      <circle cx="183" cy="124" r="8"/>
+      <circle cx="208" cy="112" r="8"/>
+    </g>
+  </g>
+</svg>

@@ -2,7 +2,7 @@ import ProductCard from "../components/ProductCard";
 import { useEffect, useMemo, useState } from "react";
 import { getProducts } from "../firebase/products";
 
-const categories = ["all", "earrings", "sunglasses", "necklace", "watch"];
+const categories = ["all", "earrings", "sunglasses", "necklace"];
 
 export default function Catalog() {
   const [products, setProducts] = useState([]);

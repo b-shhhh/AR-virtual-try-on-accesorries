@@ -380,6 +380,101 @@ function updateThreeAccessory(threeScene, face, width, height, selectedAccessory
   threeScene.renderer.render(threeScene.scene, threeScene.camera);
 }
 
+function getPreviewScale(accessory) {
+  if (accessory.placement === "ears") {
+    return 1.05 * accessory.modelScale;
+  }
+
+  if (accessory.placement === "eyes") {
+    return 2.35 * accessory.modelScale;
+  }
+
+  if (accessory.placement === "neck") {
+    return 2.1 * accessory.modelScale;
+  }
+
+  return 1.4 * accessory.modelScale;
+}
+
+function updateThreePreview(threeScene, width, height, selectedAccessory) {
+  const scale = getPreviewScale(selectedAccessory);
+
+  if (selectedAccessory.placement === "ears") {
+    const xOffset = Math.min(width * 0.18, 120);
+
+    threeScene.centerAccessory.visible = false;
+    threeScene.earrings.left.visible = true;
+    threeScene.earrings.right.visible = true;
+    threeScene.earrings.left.position.set(-xOffset, 0, 0);
+    threeScene.earrings.right.position.set(xOffset, 0, 0);
+    threeScene.earrings.left.scale.set(-scale, scale, scale);
+    threeScene.earrings.right.scale.set(scale, scale, scale);
+    threeScene.earrings.left.rotation.set(0, -0.18, 0);
+    threeScene.earrings.right.rotation.set(0, 0.18, 0);
+  } else {
+    const yOffset = selectedAccessory.placement === "neck" ? -height * 0.08 : 0;
+
+    threeScene.earrings.left.visible = false;
+    threeScene.earrings.right.visible = false;
+    threeScene.centerAccessory.visible = true;
+    threeScene.centerAccessory.position.set(0, yOffset, 0);
+    threeScene.centerAccessory.scale.set(scale, scale, scale);
+    threeScene.centerAccessory.rotation.set(0, 0, 0);
+  }
+
+  threeScene.renderer.render(threeScene.scene, threeScene.camera);
+}
+
+function renderProductImagePreview(ctx, image, width, height, selectedAccessory) {
+  if (!image) {
+    return;
+  }
+
+  const maxWidth = width * 0.6;
+  const transform =
+    selectedAccessory.placement === "ears"
+      ? null
+      : {
+          x: 0,
+          y: selectedAccessory.placement === "neck" ? -height * 0.08 : 0,
+          drawWidth: clamp(maxWidth * selectedAccessory.modelScale, 140, 360),
+          rotation: 0,
+          mirror: 1,
+          holder: "center"
+        };
+
+  ctx.save();
+  ctx.translate(width / 2, height / 2);
+
+  if (transform) {
+    drawProductImage(ctx, image, transform);
+  } else {
+    const xOffset = Math.min(width * 0.18, 120);
+    const drawHeight = clamp(height * 0.2 * selectedAccessory.modelScale, 70, 150);
+
+    drawProductImage(ctx, image, {
+      x: -xOffset,
+      y: 0,
+      drawHeight,
+      rotation: 0,
+      mirror: -1,
+      holder: "left",
+      crop: "left"
+    });
+    drawProductImage(ctx, image, {
+      x: xOffset,
+      y: 0,
+      drawHeight,
+      rotation: 0,
+      mirror: 1,
+      holder: "right",
+      crop: "right"
+    });
+  }
+
+  ctx.restore();
+}
+
 export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -521,6 +616,43 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
     ctx.restore();
   }, [selectedAccessory]);
 
+  const renderCameraPreview = useCallback(() => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+
+    if (!canvas || !video) {
+      return;
+    }
+
+    const width = video.videoWidth || canvas.clientWidth || 960;
+    const height = video.videoHeight || canvas.clientHeight || 720;
+
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, width, height);
+
+    if (threeSceneRef.current) {
+      resizeThreeScene(threeSceneRef.current, width, height);
+      threeSceneRef.current.renderer.clear();
+    }
+
+    if (threeModelReadyRef.current && threeSceneRef.current) {
+      updateThreePreview(threeSceneRef.current, width, height, selectedAccessory);
+    } else {
+      renderProductImagePreview(
+        ctx,
+        productImageRef.current,
+        width,
+        height,
+        selectedAccessory
+      );
+    }
+  }, [selectedAccessory]);
+
   const handleResults = useCallback(
     (results) => {
       const canvas = canvasRef.current;
@@ -549,6 +681,9 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
       const face = results.multiFaceLandmarks?.[0];
 
       if (!face) {
+        if (isCameraReady) {
+          renderCameraPreview();
+        }
         return;
       }
 
@@ -575,7 +710,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
         });
       }
     },
-    [onStatsChange, renderProductImage, selectedAccessory]
+    [isCameraReady, onStatsChange, renderCameraPreview, renderProductImage, selectedAccessory]
   );
 
   const { landmarkCount, trackingStatus } = useFaceMesh({
@@ -596,6 +731,12 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
       trackingStatus: cameraError ? "Camera blocked" : trackingStatus
     });
   }, [cameraError, landmarkCount, onStatsChange, trackingStatus]);
+
+  useEffect(() => {
+    if (isCameraReady) {
+      renderCameraPreview();
+    }
+  }, [isCameraReady, productStatus, renderCameraPreview]);
 
   return (
     <section className="overflow-hidden rounded-[2rem] border border-rose-100 bg-[#1C1117] p-4 shadow-aura">
