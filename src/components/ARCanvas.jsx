@@ -22,6 +22,7 @@ const FACE_REFERENCE = {
   earOffsetYToFaceHeight: 13.87 / 116.72,
   neckWidthToFaceWidth: 109.64 / 123.69
 };
+const CALIBRATION_SAMPLE_COUNT = 24;
 
 function landmarkPoint(face, index, fallback) {
   return face[index] ?? fallback;
@@ -84,6 +85,7 @@ function calculateFaceMetrics(face, width, height) {
     chin,
     faceWidth,
     faceHeight,
+    interpupillaryDistance,
     facialIndex,
     ratioScale,
     widthScale,
@@ -92,7 +94,54 @@ function calculateFaceMetrics(face, width, height) {
   };
 }
 
-function getAccessoryTransforms(face, width, height, accessory) {
+function createCalibrationSample(metrics) {
+  return {
+    faceWidth: metrics.faceWidth,
+    faceHeight: metrics.faceHeight,
+    facialIndex: metrics.facialIndex,
+    interpupillaryToFaceWidth: metrics.interpupillaryDistance / Math.max(metrics.faceWidth, 1)
+  };
+}
+
+function averageCalibrationSamples(samples) {
+  const total = samples.reduce(
+    (sum, sample) => ({
+      faceWidth: sum.faceWidth + sample.faceWidth,
+      faceHeight: sum.faceHeight + sample.faceHeight,
+      facialIndex: sum.facialIndex + sample.facialIndex,
+      interpupillaryToFaceWidth:
+        sum.interpupillaryToFaceWidth + sample.interpupillaryToFaceWidth
+    }),
+    {
+      faceWidth: 0,
+      faceHeight: 0,
+      facialIndex: 0,
+      interpupillaryToFaceWidth: 0
+    }
+  );
+
+  return {
+    faceWidth: total.faceWidth / samples.length,
+    faceHeight: total.faceHeight / samples.length,
+    facialIndex: total.facialIndex / samples.length,
+    interpupillaryToFaceWidth: total.interpupillaryToFaceWidth / samples.length
+  };
+}
+
+function isCalibrationSampleStable(samples, sample) {
+  const previous = samples.at(-1);
+
+  if (!previous) {
+    return true;
+  }
+
+  const widthShift = Math.abs(sample.faceWidth - previous.faceWidth) / Math.max(previous.faceWidth, 1);
+  const indexShift = Math.abs(sample.facialIndex - previous.facialIndex);
+
+  return widthShift < 0.08 && indexShift < 6;
+}
+
+function getAccessoryTransforms(face, width, height, accessory, calibration) {
   const metrics = calculateFaceMetrics(face, width, height);
   const {
     leftEar,
@@ -106,6 +155,16 @@ function getAccessoryTransforms(face, width, height, accessory) {
     ratioScale,
     widthScale
   } = metrics;
+  const calibratedRatioScale = calibration
+    ? clamp(calibration.facialIndex / FACE_REFERENCE.facialIndex, 0.86, 1.16)
+    : ratioScale;
+  const calibratedWidthScale = calibration
+    ? clamp(
+        calibration.interpupillaryToFaceWidth / FACE_REFERENCE.interpupillaryToFaceWidth,
+        0.88,
+        1.14
+      )
+    : widthScale;
 
   const leftX = leftEar.x * width;
   const leftY = leftEar.y * height;
@@ -128,7 +187,7 @@ function getAccessoryTransforms(face, width, height, accessory) {
       {
         x: centerX - width / 2,
         y: height / 2 - centerY + faceWidth * (accessory.yOffset ?? 0),
-        drawWidth: clamp(eyeSpan * 2.45 * accessory.modelScale * widthScale, 150, 360),
+        drawWidth: clamp(eyeSpan * 2.45 * accessory.modelScale * calibratedWidthScale, 150, 360),
         rotation: -eyeAngle,
         mirror: 1,
         holder: "center"
@@ -176,7 +235,11 @@ function getAccessoryTransforms(face, width, height, accessory) {
     ];
   }
 
-  const earringHeight = clamp(faceHeight * 0.26 * accessory.modelScale * ratioScale, 48, 132);
+  const earringHeight = clamp(
+    faceHeight * 0.26 * accessory.modelScale * calibratedRatioScale,
+    48,
+    132
+  );
   const yOffset = anchorYOffset + earringHeight * (accessory.yOffset ?? 0);
 
   return [
@@ -405,8 +468,8 @@ function estimateHeadPose(face, width, height) {
   return { roll, yaw, pitch };
 }
 
-function updateThreeEarrings(threeScene, face, width, height, selectedAccessory) {
-  const transforms = getAccessoryTransforms(face, width, height, selectedAccessory);
+function updateThreeEarrings(threeScene, face, width, height, selectedAccessory, calibration) {
+  const transforms = getAccessoryTransforms(face, width, height, selectedAccessory, calibration);
   const pose = estimateHeadPose(face, width, height);
 
   for (const side of ["left", "right"]) {
@@ -428,14 +491,14 @@ function updateThreeEarrings(threeScene, face, width, height, selectedAccessory)
   threeScene.renderer.render(threeScene.scene, threeScene.camera);
 }
 
-function updateThreeAccessory(threeScene, face, width, height, selectedAccessory) {
+function updateThreeAccessory(threeScene, face, width, height, selectedAccessory, calibration) {
   if (selectedAccessory.placement === "ears") {
     threeScene.centerAccessory.visible = false;
-    updateThreeEarrings(threeScene, face, width, height, selectedAccessory);
+    updateThreeEarrings(threeScene, face, width, height, selectedAccessory, calibration);
     return;
   }
 
-  const transform = getAccessoryTransforms(face, width, height, selectedAccessory)[0];
+  const transform = getAccessoryTransforms(face, width, height, selectedAccessory, calibration)[0];
   const pose = estimateHeadPose(face, width, height);
 
   threeScene.earrings.left.visible = false;
@@ -562,7 +625,13 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
   const threeModelReadyRef = useRef(false);
   const productImageRef = useRef(null);
   const faceRatioRef = useRef(null);
+  const calibrationRef = useRef(null);
+  const calibrationSamplesRef = useRef([]);
   const [productStatus, setProductStatus] = useState("Loading product photo");
+  const [calibrationStatus, setCalibrationStatus] = useState({
+    state: "waiting",
+    progress: 0
+  });
   const fpsRef = useRef({
     lastFrameTime: performance.now(),
     frameCount: 0,
@@ -611,6 +680,9 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
 
     productImageRef.current = null;
     threeModelReadyRef.current = false;
+    calibrationRef.current = null;
+    calibrationSamplesRef.current = [];
+    setCalibrationStatus({ state: "waiting", progress: 0 });
     setProductStatus(selectedAccessory.modelUrl ? "Loading 3D jewelry asset" : "Loading product photo");
 
     if (selectedAccessory.modelUrl) {
@@ -681,7 +753,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
     };
   }, [selectedAccessory]);
 
-  const renderProductImage = useCallback((ctx, face, width, height) => {
+  const renderProductImage = useCallback((ctx, face, width, height, calibration) => {
     const image = productImageRef.current;
 
     if (!image) {
@@ -690,7 +762,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
 
     ctx.save();
     ctx.translate(width / 2, height / 2);
-    getAccessoryTransforms(face, width, height, selectedAccessory).forEach((transform) => {
+    getAccessoryTransforms(face, width, height, selectedAccessory, calibration).forEach((transform) => {
       drawProductImage(ctx, image, transform);
     });
     ctx.restore();
@@ -761,6 +833,15 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
       const face = results.multiFaceLandmarks?.[0];
 
       if (!face) {
+        if (!calibrationRef.current) {
+          calibrationSamplesRef.current = [];
+          setCalibrationStatus((current) =>
+            current.state === "waiting" && current.progress === 0
+              ? current
+              : { state: "waiting", progress: 0 }
+          );
+        }
+
         if (isCameraReady) {
           renderCameraPreview();
         }
@@ -769,13 +850,49 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
 
       const faceMetrics = calculateFaceMetrics(face, width, height);
       faceRatioRef.current = Number(faceMetrics.facialIndex.toFixed(1));
+      let calibration = calibrationRef.current;
+      let isCalibrating = !calibration;
+
+      if (!calibration) {
+        const sample = createCalibrationSample(faceMetrics);
+        const samples = calibrationSamplesRef.current;
+
+        if (isCalibrationSampleStable(samples, sample)) {
+          samples.push(sample);
+        } else {
+          calibrationSamplesRef.current = [sample];
+        }
+
+        const progress = Math.min(
+          calibrationSamplesRef.current.length / CALIBRATION_SAMPLE_COUNT,
+          1
+        );
+
+        if (calibrationSamplesRef.current.length >= CALIBRATION_SAMPLE_COUNT) {
+          calibration = averageCalibrationSamples(calibrationSamplesRef.current);
+          calibrationRef.current = calibration;
+          isCalibrating = false;
+          setCalibrationStatus({ state: "ready", progress: 1 });
+        } else {
+          setCalibrationStatus({ state: "scanning", progress });
+        }
+      }
 
       drawLandmarks(ctx, face, width, height);
 
-      if (threeModelReadyRef.current && threeSceneRef.current) {
-        updateThreeAccessory(threeSceneRef.current, face, width, height, selectedAccessory);
-      } else if (!selectedAccessory.modelUrl) {
-        renderProductImage(ctx, face, width, height);
+      if (!isCalibrating) {
+        if (threeModelReadyRef.current && threeSceneRef.current) {
+          updateThreeAccessory(
+            threeSceneRef.current,
+            face,
+            width,
+            height,
+            selectedAccessory,
+            calibration
+          );
+        } else if (!selectedAccessory.modelUrl) {
+          renderProductImage(ctx, face, width, height, calibration);
+        }
       }
 
       const now = performance.now();
@@ -790,7 +907,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
           fps: fpsRef.current.fps,
           landmarkCount: face.length,
           faceRatio: faceRatioRef.current,
-          trackingStatus: "Tracking"
+          trackingStatus: isCalibrating ? "Calibrating" : "Tracking"
         });
       }
     },
@@ -822,6 +939,14 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
       renderCameraPreview();
     }
   }, [isCameraReady, productStatus, renderCameraPreview]);
+
+  const calibrationPercent = Math.round(calibrationStatus.progress * 100);
+  const calibrationLabel =
+    calibrationStatus.state === "ready"
+      ? "Face calibrated"
+      : calibrationStatus.state === "scanning"
+        ? `Scanning face ${calibrationPercent}%`
+        : "Place your face in frame";
 
   return (
     <section className="overflow-hidden rounded-[2rem] border border-rose-100 bg-[#1C1117] p-4 shadow-aura">
@@ -861,6 +986,21 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
         {isCameraReady ? (
           <div className="absolute left-4 top-4 rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white">
             {productStatus}
+          </div>
+        ) : null}
+
+        {isCameraReady ? (
+          <div className="absolute bottom-4 left-4 right-4 rounded-2xl bg-black/60 p-3 text-white backdrop-blur">
+            <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold">
+              <span>{calibrationLabel}</span>
+              <span>{calibrationPercent}%</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/20">
+              <div
+                className="h-full rounded-full bg-white transition-all duration-200"
+                style={{ width: `${calibrationPercent}%` }}
+              />
+            </div>
           </div>
         ) : null}
 
