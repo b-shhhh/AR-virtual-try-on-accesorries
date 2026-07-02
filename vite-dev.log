@@ -2,30 +2,8 @@
 > aura-ar@0.1.0 dev
 > vite --host 127.0.0.1
 
-Port 5173 is in use, trying another one...
-Port 5174 is in use, trying another one...
 
-  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m834[22m[2m[0m ms[22m
+  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m833[22m[2m[0m ms[22m
 
-  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5175[22m/[39m
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5173[22m/[39m
 [2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
-[2m11:44:32 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/ARCanvas.jsx[22m
-[2m11:44:32 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/ARCanvas.jsx[22m
-[2m11:44:52 AM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/ARCanvas.jsx[22m
-[2m12:00:45 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/TryOn.jsx, /src/index.css, /src/components/ARCanvas.jsx[22m
-[2m12:00:48 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/Catalog.jsx, /src/index.css[22m
-[2m12:00:56 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/Catalog.jsx, /src/index.css[22m
-[2m12:01:09 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ARCanvas.jsx, /src/index.css[22m
-[2m12:01:20 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AccessorySelector.jsx, /src/index.css[22m
-[2m12:01:27 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AccessorySelector.jsx, /src/index.css[22m
-[2m12:03:29 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ARCanvas.jsx, /src/index.css[22m
-[2m12:03:53 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ARCanvas.jsx, /src/index.css[22m
-[2m12:04:19 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/TryOn.jsx, /src/index.css, /src/components/ARCanvas.jsx[22m
-[2m12:04:37 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/Catalog.jsx, /src/index.css[22m
-[2m12:04:57 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/Catalog.jsx, /src/index.css[22m
-[2m12:15:14 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ARCanvas.jsx, /src/index.css[22m
-[2m12:15:36 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ARCanvas.jsx, /src/index.css[22m
-[2m12:15:47 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/ARCanvas.jsx, /src/index.css[22m
-[2m12:16:12 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/TryOn.jsx, /src/index.css, /src/components/ARCanvas.jsx[22m
-[2m12:16:13 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/Catalog.jsx, /src/index.css[22m
-[2m12:16:14 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/Catalog.jsx, /src/index.css[22m

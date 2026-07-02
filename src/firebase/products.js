@@ -8,7 +8,7 @@ export async function getProducts() {
       currency: "NPR",
       thumbnailUrl: "/assets/products/chandbali-gold.svg",
       tryOnImageUrl: "/assets/products/chandbali-gold.svg",
-      modelUrl: "/assets/models/chandbali-gold-earring.glb",
+      modelUrl: "/assets/earring_01.glb",
       arSupported: true
     },
     {
@@ -19,7 +19,7 @@ export async function getProducts() {
       currency: "NPR",
       thumbnailUrl: "/assets/products/pearl-hoop.svg",
       tryOnImageUrl: "/assets/products/pearl-hoop.svg",
-      modelUrl: "/assets/models/pearl-hoop-earring.glb",
+      modelUrl: "/assets/earring_02.glb",
       arSupported: true
     },
     {
@@ -30,7 +30,29 @@ export async function getProducts() {
       currency: "NPR",
       thumbnailUrl: "/assets/products/temple-jhumka.svg",
       tryOnImageUrl: "/assets/products/temple-jhumka.svg",
-      modelUrl: "/assets/models/temple-jhumka-earring.glb",
+      modelUrl: "/assets/earring_03.glb",
+      arSupported: true
+    },
+    {
+      id: "ruby-stone-earrings",
+      name: "Ruby Stone Earrings",
+      category: "earrings",
+      price: 1799,
+      currency: "NPR",
+      thumbnailUrl: "/assets/products/ruby-stone-earrings.svg",
+      tryOnImageUrl: "/assets/products/ruby-stone-earrings.svg",
+      modelUrl: "/assets/earring_stoned.glb",
+      arSupported: true
+    },
+    {
+      id: "classic-sunglasses",
+      name: "Classic Sunglasses",
+      category: "sunglasses",
+      price: 1299,
+      currency: "NPR",
+      thumbnailUrl: "/assets/products/classic-sunglasses.svg",
+      tryOnImageUrl: "/assets/products/classic-sunglasses.svg",
+      modelUrl: "/assets/glasses_01.glb",
       arSupported: true
     },
     {
@@ -41,7 +63,7 @@ export async function getProducts() {
       currency: "NPR",
       thumbnailUrl: "/assets/products/lotus-necklace.svg",
       tryOnImageUrl: "/assets/products/lotus-necklace.svg",
-      modelUrl: "/assets/models/lotus-pendant-necklace.glb",
+      modelUrl: "/assets/pendant_01.glb",
       arSupported: true
     },
     {
@@ -52,7 +74,7 @@ export async function getProducts() {
       currency: "NPR",
       thumbnailUrl: "/assets/products/classic-choker.svg",
       tryOnImageUrl: "/assets/products/classic-choker.svg",
-      modelUrl: "/assets/models/classic-gold-choker.glb",
+      modelUrl: "/assets/necklace_woman_01.glb",
       arSupported: true
     },
     {
@@ -63,7 +85,7 @@ export async function getProducts() {
       currency: "NPR",
       thumbnailUrl: "/assets/products/rose-nose-pin.svg",
       tryOnImageUrl: "/assets/products/rose-nose-pin.svg",
-      modelUrl: "/assets/models/rose-nose-pin.glb",
+      modelUrl: "/assets/earring_stoned.glb",
       arSupported: true
     }
   ];
