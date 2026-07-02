@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 import { firebaseConfig } from "./config";
 
 function hasRealFirebaseConfig(config) {
@@ -15,10 +16,12 @@ function hasRealFirebaseConfig(config) {
 export const firebaseEnabled = hasRealFirebaseConfig(firebaseConfig);
 
 let auth = null;
+let db = null;
 
 if (firebaseEnabled) {
   const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
   auth = getAuth(app);
+  db = getFirestore(app);
 }
 
-export { auth };
+export { auth, db };

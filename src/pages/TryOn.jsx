@@ -9,6 +9,7 @@ export default function TryOn() {
   const [stats, setStats] = useState({
     fps: 0,
     landmarkCount: 0,
+    faceRatio: null,
     trackingStatus: "Idle"
   });
   const selectedAccessory = getAccessoryById(selectedAccessoryId);
@@ -17,6 +18,7 @@ export default function TryOn() {
     () => [
       { label: "FPS", value: stats.fps },
       { label: "Landmarks", value: stats.landmarkCount || 0 },
+      { label: "Face Ratio", value: stats.faceRatio ? `${stats.faceRatio}` : "--" },
       { label: "Tracking", value: stats.trackingStatus },
       { label: "Accessory", value: selectedAccessory.name }
     ],
@@ -79,7 +81,7 @@ export default function TryOn() {
             </div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             {statCards.map((stat) => (
               <article
                 key={stat.label}

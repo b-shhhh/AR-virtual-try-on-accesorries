@@ -15,29 +15,110 @@ function drawLandmarks(ctx, landmarks, width, height) {
   }
 }
 
+const FACE_REFERENCE = {
+  facialIndex: 94.72,
+  interpupillaryToFaceWidth: 61.91 / 123.69,
+  earOffsetXToFaceWidth: 8.06 / 123.69,
+  earOffsetYToFaceHeight: 13.87 / 116.72,
+  neckWidthToFaceWidth: 109.64 / 123.69
+};
+
+function landmarkPoint(face, index, fallback) {
+  return face[index] ?? fallback;
+}
+
+function toPixel(point, width, height) {
+  return {
+    x: point.x * width,
+    y: point.y * height
+  };
+}
+
+function distanceBetween(a, b, width, height) {
+  return Math.hypot((b.x - a.x) * width, (b.y - a.y) * height);
+}
+
+function midpoint(a, b, width, height) {
+  return {
+    x: ((a.x + b.x) / 2) * width,
+    y: ((a.y + b.y) / 2) * height
+  };
+}
+
+function calculateFaceMetrics(face, width, height) {
+  const leftEar = landmarkPoint(face, 234, face[0]);
+  const rightEar = landmarkPoint(face, 454, leftEar);
+  const leftCheek = landmarkPoint(face, 127, leftEar);
+  const rightCheek = landmarkPoint(face, 356, rightEar);
+  const forehead = landmarkPoint(face, 10, leftEar);
+  const chin = landmarkPoint(face, 152, rightEar);
+  const leftEye = landmarkPoint(face, 33, leftEar);
+  const rightEye = landmarkPoint(face, 263, rightEar);
+  const nose = landmarkPoint(face, 1, landmarkPoint(face, 4, leftEar));
+
+  const cheekWidth = distanceBetween(leftCheek, rightCheek, width, height);
+  const earWidth = distanceBetween(leftEar, rightEar, width, height);
+  const faceWidth = Math.max(cheekWidth, earWidth * 0.78, 1);
+  const faceHeight = Math.max(distanceBetween(forehead, chin, width, height), 1);
+  const interpupillaryDistance = distanceBetween(leftEye, rightEye, width, height);
+  const facialIndex = (faceHeight / faceWidth) * 100;
+  const ratioScale = clamp(facialIndex / FACE_REFERENCE.facialIndex, 0.86, 1.16);
+  const widthScale = clamp(
+    interpupillaryDistance / Math.max(faceWidth * FACE_REFERENCE.interpupillaryToFaceWidth, 1),
+    0.88,
+    1.14
+  );
+  const roll = Math.atan2(
+    rightEar.y * height - leftEar.y * height,
+    rightEar.x * width - leftEar.x * width
+  );
+
+  return {
+    leftEar,
+    rightEar,
+    leftCheek,
+    rightCheek,
+    leftEye,
+    rightEye,
+    nose,
+    chin,
+    faceWidth,
+    faceHeight,
+    facialIndex,
+    ratioScale,
+    widthScale,
+    roll,
+    center: midpoint(leftCheek, rightCheek, width, height)
+  };
+}
+
 function getAccessoryTransforms(face, width, height, accessory) {
-  const leftEar = face[234];
-  const rightEar = face[454];
-  const leftCheek = face[127] ?? leftEar;
-  const rightCheek = face[356] ?? rightEar;
-  const nose = face[1] ?? face[4] ?? leftEar;
-  const chin = face[152] ?? nose;
+  const metrics = calculateFaceMetrics(face, width, height);
+  const {
+    leftEar,
+    rightEar,
+    leftEye,
+    rightEye,
+    nose,
+    chin,
+    faceWidth,
+    faceHeight,
+    ratioScale,
+    widthScale
+  } = metrics;
 
   const leftX = leftEar.x * width;
   const leftY = leftEar.y * height;
   const rightX = rightEar.x * width;
   const rightY = rightEar.y * height;
-  const faceWidth = Math.hypot(
-    rightCheek.x * width - leftCheek.x * width,
-    rightCheek.y * height - leftCheek.y * height
-  );
   const angle = Math.atan2(rightY - leftY, rightX - leftX);
+  const anchorXOffset = faceWidth * FACE_REFERENCE.earOffsetXToFaceWidth;
+  const anchorYOffset = faceHeight * FACE_REFERENCE.earOffsetYToFaceHeight;
 
   if (accessory.placement === "eyes") {
-    const leftEye = face[33] ?? leftEar;
-    const rightEye = face[263] ?? rightEar;
     const centerX = ((leftEye.x + rightEye.x) / 2) * width;
     const centerY = ((leftEye.y + rightEye.y) / 2) * height;
+    const eyeSpan = Math.max(distanceBetween(leftEye, rightEye, width, height), faceWidth * 0.42);
     const eyeAngle = Math.atan2(
       rightEye.y * height - leftEye.y * height,
       rightEye.x * width - leftEye.x * width
@@ -47,7 +128,7 @@ function getAccessoryTransforms(face, width, height, accessory) {
       {
         x: centerX - width / 2,
         y: height / 2 - centerY + faceWidth * (accessory.yOffset ?? 0),
-        drawWidth: clamp(faceWidth * 0.9 * accessory.modelScale, 150, 330),
+        drawWidth: clamp(eyeSpan * 2.45 * accessory.modelScale * widthScale, 150, 360),
         rotation: -eyeAngle,
         mirror: 1,
         holder: "center"
@@ -56,13 +137,14 @@ function getAccessoryTransforms(face, width, height, accessory) {
   }
 
   if (accessory.placement === "neck") {
-    const neckY = chin.y * height + faceWidth * 0.24;
+    const neckWidth = faceWidth * FACE_REFERENCE.neckWidthToFaceWidth;
+    const neckY = chin.y * height + faceHeight * 0.18 * ratioScale;
 
     return [
       {
         x: nose.x * width - width / 2,
         y: height / 2 - neckY,
-        drawWidth: clamp(faceWidth * 0.72 * accessory.modelScale, 110, 260),
+        drawWidth: clamp(neckWidth * 0.92 * accessory.modelScale, 120, 300),
         rotation: -angle * 0.35,
         mirror: 1,
         holder: "center"
@@ -94,12 +176,12 @@ function getAccessoryTransforms(face, width, height, accessory) {
     ];
   }
 
-  const earringHeight = clamp(faceWidth * 0.32 * accessory.modelScale, 44, 124);
-  const yOffset = earringHeight * accessory.yOffset;
+  const earringHeight = clamp(faceHeight * 0.26 * accessory.modelScale * ratioScale, 48, 132);
+  const yOffset = anchorYOffset + earringHeight * (accessory.yOffset ?? 0);
 
   return [
     {
-      x: leftX - width / 2,
+      x: leftX - width / 2 - anchorXOffset,
       y: height / 2 - leftY - yOffset,
       drawHeight: earringHeight,
       rotation: -angle,
@@ -108,7 +190,7 @@ function getAccessoryTransforms(face, width, height, accessory) {
       crop: "left"
     },
     {
-      x: rightX - width / 2,
+      x: rightX - width / 2 + anchorXOffset,
       y: height / 2 - rightY - yOffset,
       drawHeight: earringHeight,
       rotation: -angle,
@@ -308,11 +390,8 @@ function resizeThreeScene(threeScene, width, height) {
 }
 
 function estimateHeadPose(face, width, height) {
-  const leftEar = face[234];
-  const rightEar = face[454];
-  const leftEye = face[33] ?? leftEar;
-  const rightEye = face[263] ?? rightEar;
-  const nose = face[1] ?? face[4] ?? leftEar;
+  const metrics = calculateFaceMetrics(face, width, height);
+  const { leftEar, rightEar, leftEye, rightEye, nose } = metrics;
 
   const earSpan = Math.max(Math.abs(rightEar.x - leftEar.x), 0.001);
   const faceCenterX = (leftEar.x + rightEar.x) / 2;
@@ -482,6 +561,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
   const threeSceneRef = useRef(null);
   const threeModelReadyRef = useRef(false);
   const productImageRef = useRef(null);
+  const faceRatioRef = useRef(null);
   const [productStatus, setProductStatus] = useState("Loading product photo");
   const fpsRef = useRef({
     lastFrameTime: performance.now(),
@@ -687,6 +767,9 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
         return;
       }
 
+      const faceMetrics = calculateFaceMetrics(face, width, height);
+      faceRatioRef.current = Number(faceMetrics.facialIndex.toFixed(1));
+
       drawLandmarks(ctx, face, width, height);
 
       if (threeModelReadyRef.current && threeSceneRef.current) {
@@ -706,6 +789,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
         onStatsChange?.({
           fps: fpsRef.current.fps,
           landmarkCount: face.length,
+          faceRatio: faceRatioRef.current,
           trackingStatus: "Tracking"
         });
       }
@@ -728,6 +812,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
     onStatsChange?.({
       fps: fpsRef.current.fps,
       landmarkCount,
+      faceRatio: faceRatioRef.current,
       trackingStatus: cameraError ? "Camera blocked" : trackingStatus
     });
   }, [cameraError, landmarkCount, onStatsChange, trackingStatus]);
