@@ -4,7 +4,7 @@ const productTemplates = [
     name: "Classic Pearl Drop Earring",
     category: "earrings",
     price: 1999,
-    thumbnailUrl: "/assets/products/earring-01.svg",
+    thumbnailUrl: "https://source.unsplash.com/DRbPrVTyTyA/800x800",
     tryOnImageUrl: "/assets/products/earring-01.svg",
     modelUrl: "/assets/earring_01.glb",
     accessoryId: "earring-01"
@@ -14,7 +14,7 @@ const productTemplates = [
     name: "Minimal Gold Hoop Earring",
     category: "earrings",
     price: 1499,
-    thumbnailUrl: "/assets/products/earring-02.svg",
+    thumbnailUrl: "https://source.unsplash.com/DRbPrVTyTyA/800x800",
     tryOnImageUrl: "/assets/products/earring-02.svg",
     modelUrl: "/assets/earring_02.glb",
     accessoryId: "earring-02"
@@ -24,7 +24,7 @@ const productTemplates = [
     name: "Statement Drop Earring",
     category: "earrings",
     price: 2299,
-    thumbnailUrl: "/assets/products/earring-03.svg",
+    thumbnailUrl: "https://source.unsplash.com/800x800/?statement-earrings,jewelry,product",
     tryOnImageUrl: "/assets/products/earring-03.svg",
     modelUrl: "/assets/earring_03.glb",
     accessoryId: "earring-03"
@@ -34,7 +34,7 @@ const productTemplates = [
     name: "Stone Accent Earring",
     category: "earrings",
     price: 1799,
-    thumbnailUrl: "/assets/products/earring-stoned.svg",
+    thumbnailUrl: "https://source.unsplash.com/800x800/?rhinestone-earrings,jewelry,product",
     tryOnImageUrl: "/assets/products/earring-stoned.svg",
     modelUrl: "/assets/earring_stoned.glb",
     accessoryId: "earring-stoned"
@@ -44,7 +44,7 @@ const productTemplates = [
     name: "Soft Square Sunglasses",
     category: "sunglasses",
     price: 1299,
-    thumbnailUrl: "/assets/products/glasses-01.svg",
+    thumbnailUrl: "https://source.unsplash.com/lSl94SZHRgA/800x800",
     tryOnImageUrl: "/assets/products/glasses-01.svg",
     modelUrl: "/assets/glasses_01.glb",
     accessoryId: "glasses-01"
@@ -54,7 +54,7 @@ const productTemplates = [
     name: "Delicate Pendant",
     category: "necklace",
     price: 3199,
-    thumbnailUrl: "/assets/products/pendant-01.svg",
+    thumbnailUrl: "https://source.unsplash.com/800x800/?gold-pendant-necklace,jewelry,product",
     tryOnImageUrl: "/assets/products/pendant-01.svg",
     modelUrl: "/assets/pendant_01.glb",
     accessoryId: "pendant-01"
@@ -64,7 +64,7 @@ const productTemplates = [
     name: "Layered Necklace",
     category: "necklace",
     price: 2899,
-    thumbnailUrl: "/assets/products/necklace-woman-01.svg",
+    thumbnailUrl: "https://source.unsplash.com/800x800/?layered-necklace,jewelry,product",
     tryOnImageUrl: "/assets/products/necklace-woman-01.svg",
     modelUrl: "/assets/necklace_woman_01.glb",
     accessoryId: "necklace-woman-01"

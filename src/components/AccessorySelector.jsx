@@ -32,7 +32,7 @@ export default function AccessorySelector({
                 <img
                   src={item.thumbnailUrl}
                   alt={item.name}
-                  className="max-h-12 max-w-12 object-contain"
+                  className="h-14 w-14 rounded-xl object-cover"
                 />
               </div>
 

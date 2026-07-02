@@ -722,7 +722,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
 
     if (threeModelReadyRef.current && threeSceneRef.current) {
       updateThreePreview(threeSceneRef.current, width, height, selectedAccessory);
-    } else {
+    } else if (!selectedAccessory.modelUrl) {
       renderProductImagePreview(
         ctx,
         productImageRef.current,
@@ -774,7 +774,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
 
       if (threeModelReadyRef.current && threeSceneRef.current) {
         updateThreeAccessory(threeSceneRef.current, face, width, height, selectedAccessory);
-      } else {
+      } else if (!selectedAccessory.modelUrl) {
         renderProductImage(ctx, face, width, height);
       }
 

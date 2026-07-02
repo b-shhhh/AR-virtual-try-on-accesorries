@@ -1,15 +1,18 @@
 import { Link } from "react-router-dom";
+import { getAccessoryById } from "../data/accessories";
 
 export default function ProductCard({ product }) {
   const tryOnAccessoryId = product.accessoryId ?? product.id;
+  const tryOnAccessory = getAccessoryById(tryOnAccessoryId);
+  const thumbnailUrl = tryOnAccessory?.thumbnailUrl ?? product.thumbnailUrl;
 
   return (
     <article className="rounded-3xl border border-rose-100 bg-white p-5 shadow-aura">
       <div className="mb-4 rounded-2xl bg-aura-secondary/14 p-4">
         <img
-          src={product.thumbnailUrl}
+          src={thumbnailUrl}
           alt={product.name}
-          className="mx-auto h-32 w-32 object-contain"
+          className="mx-auto h-32 w-32 rounded-xl object-cover"
         />
       </div>
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -17,12 +20,12 @@ export default function ProductCard({ product }) {
         <span
           className={[
             "rounded-full px-3 py-1 text-xs font-semibold",
-            product.arSupported
+            product.arSupported && tryOnAccessory?.modelUrl
               ? "bg-emerald-50 text-emerald-700"
               : "bg-stone-100 text-stone-500"
           ].join(" ")}
         >
-          {product.arSupported ? "AR Ready" : "Planned"}
+          {product.arSupported && tryOnAccessory?.modelUrl ? "3D Try-On" : "Planned"}
         </span>
       </div>
       <h3 className="font-display text-xl text-aura-charcoal">{product.name}</h3>
