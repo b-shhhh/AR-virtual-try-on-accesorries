@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import useAuth from "../hooks/useAuth";
-import { getUserStats } from "../services/api";
+import { getUserStats } from "../firebase/database";
 
 export default function Profile() {
   const { user } = useAuth();

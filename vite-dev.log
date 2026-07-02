@@ -24,3 +24,8 @@
 [2m1:25:34 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/Catalog.jsx, /src/index.css[22m
 [2m1:29:45 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css, /src/pages/Catalog.jsx[22m
 [2m1:29:47 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/Profile.jsx, /src/index.css[22m
+[2m1:41:35 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/hooks/useAuth.jsx, /src/index.css[22m
+[2m1:41:36 PM[22m [36m[1m[vite][22m[39m [32m✨ new dependencies optimized: [33mfirebase/firestore[32m[39m
+[2m1:41:36 PM[22m [36m[1m[vite][22m[39m [32m✨ optimized dependencies changed. reloading[39m
+[2m1:41:37 PM[22m [36m[1m[vite][22m[39m [33mhmr invalidate [39m[2m/src/hooks/useAuth.jsx[22m Could not Fast Refresh ("default" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m1:41:37 PM[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css, /src/components/ProtectedRoute.jsx, /src/pages/Profile.jsx, /src/components/Navbar.jsx, /src/pages/Auth.jsx[22m

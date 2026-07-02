@@ -1,4 +1,5 @@
-import { apiRequest } from "../services/api";
+import { collection, getDocs, query } from "firebase/firestore";
+import { db, firebaseEnabled } from "./app";
 
 const fallbackProducts = [
   {
@@ -82,7 +83,17 @@ const fallbackProducts = [
 
 export async function getProducts() {
   try {
-    return await apiRequest("/api/products");
+    if (!firebaseEnabled || !db) {
+      return fallbackProducts;
+    }
+
+    const productsSnapshot = await getDocs(query(collection(db, "products")));
+    const products = productsSnapshot.docs.map((productDoc) => ({
+      id: productDoc.id,
+      ...productDoc.data()
+    }));
+
+    return products.length > 0 ? products : fallbackProducts;
   } catch {
     return fallbackProducts;
   }
