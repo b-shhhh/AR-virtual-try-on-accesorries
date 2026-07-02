@@ -1,13 +1,27 @@
 # AuraAR Database
 
-This folder documents the database design for the AuraAR prototype.
+This folder documents the Firebase database design for the AuraAR prototype.
 
-The current runnable backend stores data in JSON files under `backend/data/` so the project can run without installing a separate database server. For final deployment, the same collections can be moved to Firebase Firestore, MongoDB, or any document database.
+AuraAR uses Firebase for authentication and Firestore for database storage. The small Node backend in `backend/` can be kept as an optional local mock, but the active frontend data layer is Firebase-first.
 
 ## Current Storage
 
-- Product seed data: `backend/data/products.json`
-- Runtime data: `backend/data/store.json`
+- Authentication: Firebase Auth
+- Catalog and app data: Firestore collections
+- Local fallback data: built into the frontend so the prototype still opens before Firebase is configured
+- Firestore product seed file: `database/firestore-products-seed.json`
+
+Generate the 100-product seed file with:
+
+```bash
+npm run seed:products
+```
+
+After adding your real Firebase config in `src/firebase/config.js`, upload the same 100 products to Firestore with:
+
+```bash
+npm run seed:firebase-products
+```
 
 ## Collections
 
@@ -31,7 +45,7 @@ Stores catalog and AR asset metadata.
 
 ### users
 
-Stores profile-level user data. Authentication can come from Firebase Auth or the current demo login mode.
+Stores profile-level user data. Authentication comes from Firebase Auth.
 
 ```json
 {

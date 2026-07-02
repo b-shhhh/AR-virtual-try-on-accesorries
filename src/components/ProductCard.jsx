@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 
 export default function ProductCard({ product }) {
+  const tryOnAccessoryId = product.accessoryId ?? product.id;
+
   return (
     <article className="rounded-3xl border border-rose-100 bg-white p-5 shadow-aura">
       <div className="mb-4 rounded-2xl bg-aura-secondary/14 p-4">
@@ -30,7 +32,7 @@ export default function ProductCard({ product }) {
       </p>
       <div className="mt-4 flex gap-3">
         <Link
-          to="/tryon"
+          to={`/tryon?accessory=${encodeURIComponent(tryOnAccessoryId)}`}
           className="rounded-full bg-aura-primary px-4 py-2 text-sm font-semibold text-white"
         >
           Try in AR

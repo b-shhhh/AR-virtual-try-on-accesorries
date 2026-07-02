@@ -19,6 +19,10 @@ export default function Catalog() {
 
     return products.filter((product) => product.category === activeCategory);
   }, [activeCategory, products]);
+  const productCountLabel =
+    activeCategory === "all"
+      ? `${products.length} products`
+      : `${filteredProducts.length} ${activeCategory} products`;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -29,6 +33,9 @@ export default function Catalog() {
           Browse the academic product catalog by accessory type. This page is structured
           to support future Firestore integration, AR-supported item tagging, and
           purchase-confidence evaluation.
+        </p>
+        <p className="mt-4 inline-flex rounded-full bg-aura-secondary/20 px-4 py-2 text-sm font-semibold text-aura-primary">
+          {productCountLabel}
         </p>
       </div>
 

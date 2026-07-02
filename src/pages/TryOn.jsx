@@ -1,11 +1,15 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import AccessorySelector from "../components/AccessorySelector";
 import ARCanvas from "../components/ARCanvas";
 import { accessories, getAccessoryById } from "../data/accessories";
 
 export default function TryOn() {
+  const [searchParams] = useSearchParams();
+  const initialAccessoryId = searchParams.get("accessory");
+  const initialAccessory = getAccessoryById(initialAccessoryId);
   const [cameraAllowed, setCameraAllowed] = useState(false);
-  const [selectedAccessoryId, setSelectedAccessoryId] = useState(accessories[0].id);
+  const [selectedAccessoryId, setSelectedAccessoryId] = useState(initialAccessory.id);
   const [stats, setStats] = useState({
     fps: 0,
     landmarkCount: 0,
@@ -110,9 +114,9 @@ export default function TryOn() {
             <ul className="mt-4 space-y-2 text-sm text-stone-600">
               <li>Webcam access with front and rear camera toggle</li>
               <li>468 MediaPipe face landmarks drawn on top of the video</li>
-              <li>Three.js 3D earrings anchored to ear-side face landmarks</li>
-              <li>Head roll, yaw, and pitch estimates mapped to the earring model</li>
-              <li>Product photo fallback for glasses and necklace placements</li>
+              <li>Three.js 3D accessories anchored to face, eye, ear, and neck landmarks</li>
+              <li>Head roll, yaw, and pitch estimates mapped to the accessory model</li>
+              <li>100 catalog products mapped to AR-supported try-on templates</li>
               <li>Live FPS counter for quick performance feedback</li>
             </ul>
           </section>

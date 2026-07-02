@@ -1,6 +1,8 @@
 # AuraAR Backend
 
-Small REST backend for the AuraAR academic prototype.
+Small optional REST backend for the AuraAR academic prototype.
+
+The main app is Firebase-first. Use this backend only as a local mock/demo API if Firebase is not configured.
 
 ## Run
 

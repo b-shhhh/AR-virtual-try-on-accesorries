@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "backend": "node backend/server.mjs",
+    "seed:firebase-products": "node scripts/seedFirestoreProducts.mjs",
+    "seed:products": "node scripts/generateProductSeed.mjs",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
