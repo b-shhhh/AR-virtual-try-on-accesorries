@@ -21,7 +21,7 @@ export const firebaseConfig = {
   authDomain: "ar-virtual-jewelry-try-on.firebaseapp.com",
   projectId: "ar-virtual-jewelry-try-on",
   storageBucket: "ar-virtual-jewelry-try-on.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
+  messagingSenderId: "821485998234",
   appId: "1:821485998234:web:fd422bf60bf4da989a0f23"
 };
 ```
