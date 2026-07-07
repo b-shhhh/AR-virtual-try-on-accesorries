@@ -1,12 +1,10 @@
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { firebaseEnabled } from "./app";
+import { firebaseEnabled, app } from "./app";
 
 let storage = null;
 
-if (firebaseEnabled) {
-  const { getStorage: getFirebaseStorage } = await import("firebase/storage");
-  const { app } = await import("./app");
-  storage = getFirebaseStorage(app);
+if (firebaseEnabled && app) {
+  storage = getStorage(app);
 }
 
 export { storage };

@@ -15,13 +15,14 @@ function hasRealFirebaseConfig(config) {
 
 export const firebaseEnabled = hasRealFirebaseConfig(firebaseConfig);
 
+let app = null;
 let auth = null;
 let db = null;
 
 if (firebaseEnabled) {
-  const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+  app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
 }
 
-export { auth, db };
+export { app, auth, db };
