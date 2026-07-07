@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const PRODUCTS_FILE = join(__dirname, "../data/products.json");
+const PRODUCTS_FILE = join(__dirname, "../database/models-products.json");
 
 export class Product {
   static async getAll() {

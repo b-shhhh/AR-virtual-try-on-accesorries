@@ -10,7 +10,8 @@
     "dev": "node server.mjs",
     "seed:firebase": "node scripts/seedFirestoreProducts.mjs",
     "seed:products": "node scripts/generateProductSeed.mjs",
-    "generate:models": "node scripts/generateJewelryModels.mjs"
+    "generate:models": "node scripts/generateJewelryModels.mjs",
+    "upload:models": "node scripts/uploadModelsToStorage.mjs"
   },
   "keywords": [
     "AR",
@@ -20,6 +21,8 @@
   ],
   "author": "",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  },
   "devDependencies": {}
 }

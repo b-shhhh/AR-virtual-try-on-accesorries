@@ -1,7 +1,4 @@
-import { initializeApp, cert } from "firebase-admin/app";
-import { getStorage } from "firebase-admin/storage";
-import { getFirestore } from "firebase-admin/firestore";
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -340,86 +337,38 @@ const modelInfo = {
   }
 };
 
-async function uploadModels() {
-  // Initialize Firebase Admin SDK
-  // You need to download the service account key from Firebase Console
-  // and save it as 'serviceAccountKey.json' in the backend directory
-  try {
-    const serviceAccount = JSON.parse(
-      await readFile(join(__dirname, "../serviceAccountKey.json"), "utf8")
-    );
-    
-    initializeApp({
-      credential: cert(serviceAccount)
-    });
-  } catch (error) {
-    console.error("Please download your Firebase service account key and save it as 'backend/serviceAccountKey.json'");
-    console.error("Get it from: Firebase Console > Project Settings > Service Accounts > Generate New Private Key");
-    process.exit(1);
-  }
-
-  const storage = getStorage();
-  const db = getFirestore();
+async function generateProducts() {
   const modelsDir = join(__dirname, "../../3d models");
-  
-  // Get all GLB files
   const files = await readdir(modelsDir);
   const glbFiles = files.filter(f => f.endsWith('.glb'));
   
-  console.log(`Found ${glbFiles.length} GLB files to upload...`);
+  const products = [];
   
   for (const file of glbFiles) {
     const info = modelInfo[file];
-    if (!info) {
-      console.log(`No metadata found for ${file}, skipping...`);
-      continue;
-    }
+    if (!info) continue;
     
-    try {
-      // Read the file
-      const filePath = join(modelsDir, file);
-      const fileBuffer = await readFile(filePath);
-      
-      // Upload to Firebase Storage
-      const bucket = storage.bucket();
-      const storagePath = `models/${file}`;
-      const fileRef = bucket.file(storagePath);
-      
-      await fileRef.save(fileBuffer, {
-        metadata: {
-          contentType: 'model/gltf-binary'
-        }
-      });
-      
-      // Make the file publicly accessible
-      await fileRef.makePublic();
-      
-      // Get the public URL
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${storagePath}`;
-      
-      // Add product to Firestore
-      const productData = {
-        id: info.id,
-        name: info.name,
-        category: info.category,
-        price: info.price,
-        currency: "NPR",
-        description: info.description,
-        modelUrl: publicUrl,
-        thumbnailUrl: `https://source.unsplash.com/800x800/?${info.category},jewelry,product`,
-        tryOnImageUrl: publicUrl, // Using model as try-on image for now
-        arSupported: true,
-        createdAt: new Date().toISOString()
-      };
-      
-      await setDoc(doc(db, "products", info.id), productData);
-      console.log(`✓ Uploaded and added: ${info.name}`);
-    } catch (error) {
-      console.error(`✗ Error processing ${file}:`, error.message);
-    }
+    products.push({
+      id: info.id,
+      name: info.name,
+      category: info.category,
+      price: info.price,
+      currency: "NPR",
+      description: info.description,
+      modelUrl: `/3d models/${file}`,
+      thumbnailUrl: `https://source.unsplash.com/800x800/?${info.category},jewelry,product`,
+      tryOnImageUrl: `/3d models/${file}`,
+      arSupported: true
+    });
   }
   
-  console.log("\nAll models processed!");
+  // Write to database folder for seeding
+  const outputPath = join(__dirname, "../database/models-products.json");
+  await writeFile(outputPath, JSON.stringify(products, null, 2));
+  
+  console.log(`Generated ${products.length} products to ${outputPath}`);
+  console.log("\nProducts:");
+  products.forEach(p => console.log(`  - ${p.name} (${p.category})`));
 }
 
-uploadModels().catch(console.error);
+generateProducts().catch(console.error);
