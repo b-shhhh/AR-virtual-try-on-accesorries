@@ -15,5 +15,8 @@
     "seed:firebase": "cd backend && npm run seed:firebase",
     "seed:products": "cd backend && npm run seed:products",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install"
+  },
+  "dependencies": {
+    "firebase": "^12.15.0"
   }
 }

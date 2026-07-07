@@ -17,12 +17,12 @@ Update `frontend/src/firebase/config.js` with your real Firebase values:
 
 ```javascript
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "AIzaSyDp8gzj1MprdEMoNO-MtsxYW4vsJ0n9HNk",
   authDomain: "ar-virtual-jewelry-try-on.firebaseapp.com",
   projectId: "ar-virtual-jewelry-try-on",
   storageBucket: "ar-virtual-jewelry-try-on.appspot.com",
   messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  appId: "1:821485998234:web:fd422bf60bf4da989a0f23"
 };
 ```
 

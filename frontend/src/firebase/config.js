@@ -1,8 +1,8 @@
 export const firebaseConfig = {
-  apiKey: "your-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "your-sender-id",
-  appId: "your-app-id"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "ar-virtual-jewelry-try-on.firebaseapp.com",
+  projectId: "ar-virtual-jewelry-try-on",
+  storageBucket: "ar-virtual-jewelry-try-on.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
