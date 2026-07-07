@@ -1,103 +1,53 @@
 import { createServer } from "node:http";
-import { readFile, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { corsMiddleware } from "./middleware/corsHandler.js";
+import { requestLogger } from "./middleware/requestLogger.js";
+import { router } from "./router.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = join(__dirname, "data");
-const PRODUCTS_FILE = join(DATA_DIR, "products.json");
-const STORE_FILE = join(DATA_DIR, "store.json");
 const PORT = Number(process.env.PORT || 4000);
-
-async function readJson(filePath, fallback) {
-  try {
-    const raw = await readFile(filePath, "utf8");
-    return JSON.parse(raw);
-  } catch {
-    return fallback;
-  }
-}
-
-async function writeJson(filePath, data) {
-  await writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
-}
-
-function sendJson(response, statusCode, payload) {
-  response.writeHead(statusCode, {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Content-Type": "application/json"
-  });
-  response.end(JSON.stringify(payload));
-}
-
-function sendNotFound(response) {
-  sendJson(response, 404, { error: "Route not found" });
-}
-
-async function parseBody(request) {
-  const chunks = [];
-
-  for await (const chunk of request) {
-    chunks.push(chunk);
-  }
-
-  const raw = Buffer.concat(chunks).toString("utf8");
-  return raw ? JSON.parse(raw) : {};
-}
-
-function calculateSusScore(answers) {
-  if (!Array.isArray(answers) || answers.length !== 10) {
-    return null;
-  }
-
-  const total = answers.reduce((sum, answer, index) => {
-    const value = Number(answer);
-    if (!Number.isFinite(value) || value < 1 || value > 5) {
-      return NaN;
-    }
-
-    return sum + (index % 2 === 0 ? value - 1 : 5 - value);
-  }, 0);
-
-  return Number.isNaN(total) ? null : total * 2.5;
-}
-
-function userStats(store, userId) {
-  const wishlist = store.wishlist[userId] ?? [];
-  const tryOns = store.tryOns.filter((item) => item.userId === userId);
-
-  return {
-    tryOns: tryOns.length,
-    wishlisted: wishlist.length,
-    purchased: 0
-  };
-}
 
 async function handleRequest(request, response) {
   if (request.method === "OPTIONS") {
-    sendJson(response, 204, {});
+    response.writeHead(204);
+    response.end();
     return;
   }
 
-  const url = new URL(request.url, `http://${request.headers.host}`);
-  const path = url.pathname;
+  // Apply middleware
+  corsMiddleware(request, response, () => {
+    requestLogger(request, response, async () => {
+      try {
+        await router(request, response);
+      } catch (error) {
+        console.error("Request error:", error);
+      }
+    });
+  });
+}
 
-  try {
-    if (request.method === "GET" && path === "/health") {
-      sendJson(response, 200, { status: "ok", service: "auraar-backend" });
-      return;
-    }
+const server = createServer(handleRequest);
 
-    if (request.method === "GET" && path === "/api/products") {
-      const products = await readJson(PRODUCTS_FILE, []);
-      sendJson(response, 200, products);
-      return;
-    }
+server.listen(PORT, () => {
+  console.log(`[${new Date().toISOString()}] AuraAR Backend started on http://localhost:${PORT}`);
+  console.log("Available endpoints:");
+  console.log("  GET  /health");
+  console.log("  GET  /api/products");
+  console.log("  GET  /api/users/:userId/stats");
+  console.log("  GET  /api/users/:userId/wishlist");
+  console.log("  POST /api/users/:userId/wishlist");
+  console.log("  DEL  /api/users/:userId/wishlist/:productId");
+  console.log("  POST /api/tryons");
+  console.log("  GET  /api/users/:userId/tryons");
+  console.log("  POST /api/sus-responses");
+  console.log("  GET  /api/users/:userId/sus");
+});
 
-    const userStatsMatch = path.match(/^\/api\/users\/([^/]+)\/stats$/);
-    if (request.method === "GET" && userStatsMatch) {
+process.on("SIGTERM", () => {
+  console.log("SIGTERM received, shutting down gracefully");
+  server.close(() => {
+    console.log("Server closed");
+    process.exit(0);
+  });
+});
       const store = await readJson(STORE_FILE, { wishlist: {}, tryOns: [], susResponses: [] });
       sendJson(response, 200, userStats(store, userStatsMatch[1]));
       return;
