@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 320" role="img" aria-labelledby="title desc">
+  <title id="title">Earring 03</title>
+  <desc id="desc">A pair of dome-shaped gold jhumka earrings with ruby accents.</desc>
+  <defs>
+    <linearGradient id="gold" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffe99a"/>
+      <stop offset=".45" stop-color="#c9902c"/>
+      <stop offset="1" stop-color="#7a4f1e"/>
+    </linearGradient>
+    <linearGradient id="ruby" x1="0" x2="1">
+      <stop offset="0" stop-color="#ff6b9b"/>
+      <stop offset="1" stop-color="#9e1745"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(60 150)" stroke-linejoin="round">
+    <circle cy="-46" r="12" fill="url(#ruby)" stroke="#f2c65a" stroke-width="4"/>
+    <path d="M0-32v22" stroke="#d0a13d" stroke-width="5" stroke-linecap="round"/>
+    <path d="M-39 30c5-29 25-45 39-45s34 16 39 45z" fill="url(#gold)" stroke="#8f621f" stroke-width="3"/>
+    <path d="M-30 30c5 27 55 27 60 0" fill="#b77825" stroke="#8f621f" stroke-width="3"/>
+    <g fill="url(#ruby)" stroke="#ffd36c" stroke-width="2">
+      <circle cx="-27" cy="43" r="5"/>
+      <circle cx="-9" cy="51" r="5"/>
+      <circle cx="9" cy="51" r="5"/>
+      <circle cx="27" cy="43" r="5"/>
+    </g>
+  </g>
+  <g transform="translate(180 150)" stroke-linejoin="round">
+    <circle cy="-46" r="12" fill="url(#ruby)" stroke="#f2c65a" stroke-width="4"/>
+    <path d="M0-32v22" stroke="#d0a13d" stroke-width="5" stroke-linecap="round"/>
+    <path d="M-39 30c5-29 25-45 39-45s34 16 39 45z" fill="url(#gold)" stroke="#8f621f" stroke-width="3"/>
+    <path d="M-30 30c5 27 55 27 60 0" fill="#b77825" stroke="#8f621f" stroke-width="3"/>
+    <g fill="url(#ruby)" stroke="#ffd36c" stroke-width="2">
+      <circle cx="-27" cy="43" r="5"/>
+      <circle cx="-9" cy="51" r="5"/>
+      <circle cx="9" cy="51" r="5"/>
+      <circle cx="27" cy="43" r="5"/>
+    </g>
+  </g>
+</svg>
