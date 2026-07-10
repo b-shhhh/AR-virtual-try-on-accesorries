@@ -7,9 +7,10 @@ const FACE_LANDMARKER_MODEL =
 export default function useFaceMesh({ videoRef, enabled, onResults }) {
   const faceLandmarkerRef = useRef(null);
   const frameRef = useRef(null);
-  const [isDetectorReady, setIsDetectorReady] = useState(false);
-  const [landmarkCount, setLandmarkCount] = useState(0);
-  const [trackingStatus, setTrackingStatus] = useState("Idle");
+   const [isDetectorReady, setIsDetectorReady] = useState(false);
+   const [landmarkCount, setLandmarkCount] = useState(0);
+   const [trackingStatus, setTrackingStatus] = useState("Idle");
+   const [detectorError, setDetectorError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -22,19 +23,38 @@ export default function useFaceMesh({ videoRef, enabled, onResults }) {
           /* @vite-ignore */ TASKS_VISION_CDN
         );
         const vision = await FilesetResolver.forVisionTasks(`${TASKS_VISION_CDN}/wasm`);
-        const faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: FACE_LANDMARKER_MODEL,
-            delegate: "GPU"
-          },
-          numFaces: 1,
-          outputFaceBlendshapes: false,
-          outputFacialTransformationMatrixes: false,
-          runningMode: "VIDEO",
-          minFaceDetectionConfidence: 0.6,
-          minFacePresenceConfidence: 0.6,
-          minTrackingConfidence: 0.6
-        });
+        
+        let faceLandmarker;
+        try {
+          faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath: FACE_LANDMARKER_MODEL,
+              delegate: "GPU"
+            },
+            numFaces: 1,
+            outputFaceBlendshapes: false,
+            outputFacialTransformationMatrixes: false,
+            runningMode: "VIDEO",
+            minFaceDetectionConfidence: 0.6,
+            minFacePresenceConfidence: 0.6,
+            minTrackingConfidence: 0.6
+          });
+        } catch (gpuError) {
+          console.error("GPU delegate failed, falling back to CPU:", gpuError);
+          faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath: FACE_LANDMARKER_MODEL,
+              delegate: "CPU"
+            },
+            numFaces: 1,
+            outputFaceBlendshapes: false,
+            outputFacialTransformationMatrixes: false,
+            runningMode: "VIDEO",
+            minFaceDetectionConfidence: 0.6,
+            minFacePresenceConfidence: 0.6,
+            minTrackingConfidence: 0.6
+          });
+        }
 
         if (cancelled) {
           faceLandmarker.close();
@@ -45,7 +65,9 @@ export default function useFaceMesh({ videoRef, enabled, onResults }) {
         setIsDetectorReady(true);
         setTrackingStatus("Searching");
       } catch (error) {
+        console.error("FaceLandmarker failed to load:", error);
         setTrackingStatus("Detector failed");
+        setDetectorError(error);
       }
     };
 
@@ -100,6 +122,7 @@ export default function useFaceMesh({ videoRef, enabled, onResults }) {
 
   return {
     landmarkCount,
-    trackingStatus
+    trackingStatus,
+    detectorError
   };
 }

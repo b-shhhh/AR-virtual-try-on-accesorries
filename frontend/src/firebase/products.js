@@ -1,24 +1,30 @@
 import { collection, getDocs, query, getDoc, doc } from "firebase/firestore";
 import { fallbackProducts } from "../data/productCatalog";
 import { getModelCatalog } from "../data/modelsCatalog";
+import { getModelPreviewUrl } from "../data/modelPreview";
 import { db, firebaseEnabled } from "./app";
 
 export async function getProducts() {
   try {
     if (!firebaseEnabled || !db) {
       // Use models catalog as fallback
-      return getModelCatalog().map(model => ({
-        id: model.id,
-        name: model.name,
-        category: model.category,
-        price: model.price,
-        currency: "NPR",
-        description: model.description,
-        modelUrl: `/3d models/${model.modelFile}`,
-        thumbnailUrl: `https://source.unsplash.com/800x800/?${model.category},jewelry,product`,
-        tryOnImageUrl: `/3d models/${model.modelFile}`,
-        arSupported: model.arSupported
-      }));
+      return getModelCatalog().map(model => {
+        const previewUrl = getModelPreviewUrl(model.modelFile);
+
+        return {
+          id: model.id,
+          name: model.name,
+          category: model.category,
+          price: model.price,
+          currency: "NPR",
+          description: model.description,
+          previewUrl,
+          modelUrl: `/3d models/${model.modelFile}`,
+          thumbnailUrl: previewUrl,
+          tryOnImageUrl: previewUrl,
+          arSupported: model.arSupported
+        };
+      });
     }
 
     const productsSnapshot = await getDocs(query(collection(db, "products")));
@@ -38,6 +44,8 @@ export async function getProductById(productId) {
     if (!firebaseEnabled || !db) {
       const model = getModelCatalog().find(m => m.id === productId);
       if (model) {
+        const previewUrl = getModelPreviewUrl(model.modelFile);
+
         return {
           id: model.id,
           name: model.name,
@@ -45,9 +53,10 @@ export async function getProductById(productId) {
           price: model.price,
           currency: "NPR",
           description: model.description,
+          previewUrl,
           modelUrl: `/3d models/${model.modelFile}`,
-          thumbnailUrl: `https://source.unsplash.com/800x800/?${model.category},jewelry,product`,
-          tryOnImageUrl: `/3d models/${model.modelFile}`,
+          thumbnailUrl: previewUrl,
+          tryOnImageUrl: previewUrl,
           arSupported: model.arSupported
         };
       }

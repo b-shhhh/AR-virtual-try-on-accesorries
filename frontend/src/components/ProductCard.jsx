@@ -4,7 +4,7 @@ import { getAccessoryById } from "../data/accessories";
 export default function ProductCard({ product }) {
   const tryOnAccessoryId = product.accessoryId ?? product.id;
   const tryOnAccessory = getAccessoryById(tryOnAccessoryId);
-  const thumbnailUrl = tryOnAccessory?.thumbnailUrl ?? product.thumbnailUrl;
+  const thumbnailUrl = product.previewUrl ?? tryOnAccessory?.thumbnailUrl ?? product.thumbnailUrl;
 
   return (
     <article className="rounded-3xl border border-rose-100 bg-white p-5 shadow-aura">

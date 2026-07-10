@@ -623,6 +623,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
   const threeCanvasRef = useRef(null);
   const threeSceneRef = useRef(null);
   const threeModelReadyRef = useRef(false);
+  const modelLoadFailedRef = useRef(false);
   const productImageRef = useRef(null);
   const faceRatioRef = useRef(null);
   const calibrationRef = useRef(null);
@@ -680,6 +681,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
 
     productImageRef.current = null;
     threeModelReadyRef.current = false;
+    modelLoadFailedRef.current = false;
     calibrationRef.current = null;
     calibrationSamplesRef.current = [];
     setCalibrationStatus({ state: "waiting", progress: 0 });
@@ -690,6 +692,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
       const loader = new GLTFLoader();
 
       const useFallbackModel = () => {
+        modelLoadFailedRef.current = true;
         if (!threeScene || cancelled || selectedAccessory.placement !== "ears") {
           setProductStatus("3D asset missing, using product preview");
           return;
@@ -794,7 +797,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
 
     if (threeModelReadyRef.current && threeSceneRef.current) {
       updateThreePreview(threeSceneRef.current, width, height, selectedAccessory);
-    } else if (!selectedAccessory.modelUrl) {
+    } else if (!selectedAccessory.modelUrl || modelLoadFailedRef.current) {
       renderProductImagePreview(
         ctx,
         productImageRef.current,
@@ -890,7 +893,7 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
             selectedAccessory,
             calibration
           );
-        } else if (!selectedAccessory.modelUrl) {
+        } else if (!selectedAccessory.modelUrl || modelLoadFailedRef.current) {
           renderProductImage(ctx, face, width, height, calibration);
         }
       }
