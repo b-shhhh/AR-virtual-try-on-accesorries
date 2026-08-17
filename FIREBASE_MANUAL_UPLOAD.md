@@ -18,16 +18,16 @@ Since your Firebase is currently empty, here's how to manually upload your 3D mo
 4. For each product in `backend/database/models-products.json`, add a document:
 
 **Example for one product:**
-- Document ID: `8bit_sunglassesheart`
+- Document ID: `aviator_sunglasses`
 - Fields:
-  - name: "8-bit Heart Sunglasses"
+  - name: "Aviator Sunglasses"
   - category: "sunglasses"
-  - price: 2499
+  - price: 2299
   - currency: "NPR"
-  - description: "Unique heart-shaped sunglasses..."
-  - modelUrl: "https://storage.googleapis.com/ar-virtual-jewelry-try-on.appspot.com/models/8bit_sunglassesheart.glb"
+  - description: "Classic aviator sunglasses with a timeless design."
+  - modelUrl: "https://storage.googleapis.com/ar-virtual-jewelry-try-on.appspot.com/models/aviator_sunglasses.glb"
   - thumbnailUrl: "https://source.unsplash.com/800x800/?sunglasses,jewelry,product"
-  - tryOnImageUrl: "https://storage.googleapis.com/ar-virtual-jewelry-try-on.appspot.com/models/8bit_sunglassesheart.glb"
+  - tryOnImageUrl: "https://storage.googleapis.com/ar-virtual-jewelry-try-on.appspot.com/models/aviator_sunglasses.glb"
   - arSupported: true
 
 ## Option 2: Automated Upload (Recommended)
