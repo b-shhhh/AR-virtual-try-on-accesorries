@@ -23,6 +23,8 @@ export async function getUserTryOns(request, response, userId) {
     response.writeHead(200, { "Content-Type": "application/json" });
     response.end(JSON.stringify({ success: true, data: tryOns }));
   } catch (error) {
-    throw new AppError(500, "Failed to fetch try-ons");
-  }
+    if (error instanceof AppError) throw error;
+    console.error("recordTryOn failed:", error); // add this
+    throw new AppError(500, "Failed to record try-on");
+}
 }

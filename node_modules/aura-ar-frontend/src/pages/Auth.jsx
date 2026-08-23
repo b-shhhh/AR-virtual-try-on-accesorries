@@ -16,7 +16,7 @@ export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const redirectTo = location.state?.from || "/profile";
+  const redirectTo = location.state?.from || "/";
 
   function resetSignupOnlyFields() {
     setFullName("");
@@ -46,12 +46,18 @@ export default function Auth() {
         setError("Please enter your full name.");
         return;
       }
-      if (!phoneNumber.trim()) {
-        setError("Please enter a phone number.");
+      if (!/^\d{10}$/.test(phoneNumber.trim())) {
+        setError("Phone number must be exactly 10 digits.");
         return;
       }
       if (!address.trim()) {
         setError("Please enter your address.");
+        return;
+      }
+      if (!/^(?=.*[A-Z])(?=.*\d)[A-Za-z0-9]{8,}$/.test(password)) {
+        setError(
+          "Password must be at least 8 characters, include one uppercase letter and one number, and contain no special characters."
+        );
         return;
       }
     }
@@ -164,8 +170,11 @@ export default function Auth() {
                 <input
                   type="tel"
                   value={phoneNumber}
-                  onChange={(event) => setPhoneNumber(event.target.value)}
+                  onChange={(event) =>
+                    setPhoneNumber(event.target.value.replace(/\D/g, "").slice(0, 10))
+                  }
                   placeholder="98XXXXXXXX"
+                  maxLength={10}
                   required
                   className="w-full rounded-2xl border border-aura-secondary/50 bg-white px-4 py-3 outline-none transition focus:border-aura-accent"
                 />
@@ -196,8 +205,12 @@ export default function Auth() {
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="Minimum 6 characters"
-                minLength={6}
+                placeholder={
+                  mode === "signup"
+                    ? "Min 8 chars, 1 uppercase, 1 number"
+                    : "Enter your password"
+                }
+                minLength={mode === "signup" ? 8 : undefined}
                 required
                 className="w-full rounded-2xl border border-aura-secondary/50 bg-white px-4 py-3 outline-none transition focus:border-aura-accent"
               />
@@ -213,7 +226,7 @@ export default function Auth() {
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   placeholder="Re-enter your password"
-                  minLength={6}
+                  minLength={8}
                   required
                   className="w-full rounded-2xl border border-aura-secondary/50 bg-white px-4 py-3 outline-none transition focus:border-aura-accent"
                 />

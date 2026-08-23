@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
-import { getUserStats } from "../firebase/database";
+import { getUserStats, getUserTryOns } from "../firebase/database";
+import { getAccessoryById } from "../data/accessories";
 
 function getInitials(email) {
   if (!email) return "U";
@@ -16,7 +17,9 @@ function getInitials(email) {
 
 function formatDate(date) {
   if (!date) return "N/A";
-  return new Date(date).toLocaleDateString("en-US", {
+  const value = date?.toDate?.() ?? new Date(date);
+
+  return value.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric"
@@ -28,23 +31,26 @@ export default function Profile() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     tryOns: 0,
-    wishlisted: 0,
     purchased: 0
   });
+  const [recentTryOns, setRecentTryOns] = useState([]);
 
   useEffect(() => {
     if (!user?.uid) {
       return;
     }
 
-    getUserStats(user.uid)
-      .then(setStats)
+    Promise.all([getUserStats(user.uid), getUserTryOns(user.uid)])
+      .then(([firebaseStats, tryOns]) => {
+        setStats(firebaseStats);
+        setRecentTryOns(tryOns);
+      })
       .catch(() => {
         setStats({
           tryOns: 0,
-          wishlisted: 0,
           purchased: 0
         });
+        setRecentTryOns([]);
       });
   }, [user?.uid]);
 
@@ -91,7 +97,7 @@ export default function Profile() {
         </div>
 
         {/* Stats Cards with Icons */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <div className="rounded-3xl bg-aura-secondary/12 p-5">
             <div className="flex items-center gap-2">
               <svg className="h-5 w-5 text-aura-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,16 +108,6 @@ export default function Profile() {
             </div>
             <p className="mt-2 font-display text-3xl text-aura-charcoal">{stats.tryOns}</p>
             <p className="mt-1 text-xs text-stone-500">Virtual try-on sessions</p>
-          </div>
-          <div className="rounded-3xl bg-aura-secondary/12 p-5">
-            <div className="flex items-center gap-2">
-              <svg className="h-5 w-5 text-aura-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-              <p className="text-sm font-medium text-stone-600">Wishlisted</p>
-            </div>
-            <p className="mt-2 font-display text-3xl text-aura-charcoal">{stats.wishlisted}</p>
-            <p className="mt-1 text-xs text-stone-500">Saved for later</p>
           </div>
           <div className="rounded-3xl bg-aura-secondary/12 p-5">
             <div className="flex items-center gap-2">
@@ -142,6 +138,47 @@ export default function Profile() {
               Shop
             </Link>
           </div>
+        </div>
+
+        {/* Recent Try-Ons */}
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold text-aura-primary">Recent Try-Ons</h2>
+          {recentTryOns.length > 0 ? (
+            <div className="mt-3 divide-y divide-aura-secondary/20 rounded-3xl border border-aura-secondary/20 bg-white">
+              {recentTryOns.map((tryOn) => {
+                const accessory = getAccessoryById(tryOn.accessoryId ?? tryOn.productId);
+
+                return (
+                  <div key={tryOn.id} className="flex items-center justify-between gap-4 p-4">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={accessory.thumbnailUrl}
+                        alt={accessory.name}
+                        className="h-12 w-12 rounded-2xl bg-aura-cream object-contain p-2"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "/assets/products/earrings.png";
+                        }}
+                      />
+                      <div>
+                        <p className="font-medium text-aura-primary">{accessory.name}</p>
+                        <p className="text-xs text-stone-500">
+                          {formatDate(tryOn.createdAt ?? tryOn.timestamp)}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-aura-secondary/12 px-3 py-1 text-xs font-semibold text-aura-accent">
+                      {tryOn.trackingStatus ?? "Saved"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="mt-3 rounded-3xl border border-dashed border-aura-secondary/30 p-4 text-sm text-stone-500">
+              No try-ons saved yet. Start the camera on the try-on page to save your first session.
+            </p>
+          )}
         </div>
 
         {/* Account Details */}

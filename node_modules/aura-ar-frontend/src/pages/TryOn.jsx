@@ -27,6 +27,7 @@ export default function TryOn() {
   const [cameraAllowed, setCameraAllowed] = useState(false);
   const [selectedAccessoryId, setSelectedAccessoryId] = useState(initialAccessory?.id ?? accessories[0].id);
   const [cartMessage, setCartMessage] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
   const [stats, setStats] = useState({
     fps: 0,
     landmarkCount: 0,
@@ -114,10 +115,14 @@ export default function TryOn() {
 
       if (saved && mountedRef.current) {
         setCapturedCount((count) => count + 1);
+        setSaveMessage("Try-on saved to Firebase.");
       }
     } catch (error) {
       hasCapturedSessionStartRef.current = false;
       console.error("Failed to save try-on session start:", error);
+      if (mountedRef.current) {
+        setSaveMessage("Firebase save failed. Check Firestore rules and sign-in.");
+      }
     }
   }, [selectedAccessoryId, user?.email, user?.uid]);
 
@@ -156,9 +161,13 @@ export default function TryOn() {
 
       if (saved && incrementCounter && mountedRef.current) {
         setCapturedCount((count) => count + 1);
+        setSaveMessage("Try-on saved to Firebase.");
       }
     } catch (error) {
       console.error("Failed to save try-on session metrics:", error);
+      if (mountedRef.current) {
+        setSaveMessage("Firebase save failed. Check Firestore rules and sign-in.");
+      }
     }
   }, [selectedAccessoryId, user?.email, user?.uid]);
 
@@ -329,6 +338,12 @@ export default function TryOn() {
               {cartMessage ? (
                 <div className="mt-4 rounded-2xl bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
                   {cartMessage}
+                </div>
+              ) : null}
+
+              {saveMessage ? (
+                <div className="mt-4 rounded-2xl bg-aura-secondary/12 px-4 py-2 text-sm text-aura-primary">
+                  {saveMessage}
                 </div>
               ) : null}
 

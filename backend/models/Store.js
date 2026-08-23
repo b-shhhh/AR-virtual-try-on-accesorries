@@ -1,8 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
-import { getFirestoreDb } from "../config/firebaseAdmin.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, "../data");
@@ -13,38 +11,6 @@ const DEFAULT_STORE = {
   tryOns: [],
   susResponses: []
 };
-
-function normalizeFirestoreTimestamp(value) {
-  if (!value) {
-    return null;
-  }
-
-  if (value instanceof Timestamp) {
-    return value.toDate().toISOString();
-  }
-
-  if (typeof value.toDate === "function") {
-    return value.toDate().toISOString();
-  }
-
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-
-  return value;
-}
-
-function normalizeTryOnDocument(doc) {
-  const data = doc.data();
-  const timestamp = normalizeFirestoreTimestamp(data.timestamp ?? data.createdAt);
-
-  return {
-    id: doc.id,
-    ...data,
-    timestamp,
-    createdAt: normalizeFirestoreTimestamp(data.createdAt) ?? timestamp
-  };
-}
 
 export class Store {
   static async readStore() {
@@ -88,29 +54,30 @@ export class Store {
   }
 
   static async addTryOn(tryOnData) {
-    const db = await getFirestoreDb();
+    const store = await this.readStore();
     const timestamp = new Date().toISOString();
     const tryOn = {
-      timestamp: FieldValue.serverTimestamp(),
-      createdAt: FieldValue.serverTimestamp(),
+      id: `tryon-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      timestamp,
+      createdAt: timestamp,
       ...tryOnData
     };
 
-    const docRef = await db.collection("tryOns").add(tryOn);
+    if (!Array.isArray(store.tryOns)) {
+      store.tryOns = [];
+    }
 
-    return {
-      id: docRef.id,
-      ...tryOnData,
-      timestamp,
-      createdAt: timestamp
-    };
+    store.tryOns.push(tryOn);
+    await this.writeStore(store);
+
+    return tryOn;
   }
 
   static async getTryOns(userId) {
-    const db = await getFirestoreDb();
-    const snapshot = await db.collection("tryOns").where("userId", "==", userId).get();
+    const store = await this.readStore();
+    const tryOns = Array.isArray(store.tryOns) ? store.tryOns : [];
 
-    return snapshot.docs.map(normalizeTryOnDocument);
+    return tryOns.filter((tryOn) => tryOn.userId === userId);
   }
 
   static async addSusResponse(susData) {

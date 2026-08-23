@@ -59,6 +59,28 @@ export async function getUserStats(userId) {
   };
 }
 
+export async function getUserTryOns(userId, limitCount = 5) {
+  if (!firebaseReady() || !userId) {
+    return [];
+  }
+
+  const tryOnsSnapshot = await getDocs(
+    query(collection(db, "tryOns"), where("userId", "==", userId))
+  );
+
+  return tryOnsSnapshot.docs
+    .map((snapshot) => ({
+      id: snapshot.id,
+      ...snapshot.data()
+    }))
+    .sort((a, b) => {
+      const aDate = a.createdAt?.toDate?.() ?? new Date(a.createdAt ?? 0);
+      const bDate = b.createdAt?.toDate?.() ?? new Date(b.createdAt ?? 0);
+      return bDate - aDate;
+    })
+    .slice(0, limitCount);
+}
+
 export async function addToWishlist(userId, productId) {
   if (!firebaseReady() || !userId || !productId) {
     return;
@@ -110,6 +132,23 @@ export async function saveTryOnEvent({
     sessionId: sessionId ?? null,
     trackingStatus: trackingStatus ?? null
   };
+
+  if (firebaseReady() && userId) {
+    try {
+      const result = await addDoc(collection(db, "tryOns"), {
+        ...record,
+        createdAt: serverTimestamp()
+      });
+
+      return {
+        id: result.id,
+        ...record
+      };
+    } catch (error) {
+      console.error("Failed to save try-on to Firestore:", error);
+      throw error;
+    }
+  }
 
   const result = await recordTryOnEvent(record);
   return result?.data ?? result;

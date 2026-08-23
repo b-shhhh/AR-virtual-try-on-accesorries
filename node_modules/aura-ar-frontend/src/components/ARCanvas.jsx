@@ -17,16 +17,25 @@ const FACE_REFERENCE = {
   neckWidthToFaceWidth: 109.64 / 123.69
 };
 
-const CALIBRATION_SAMPLE_COUNT = 24;
+const CALIBRATION_SAMPLE_COUNT = 1;
 const EARLOBE_JAW_INTERPOLATION = 0.2;
 const TRAGION_TO_EARLOBE_DOWN_SCALE = 0.28;
 const EAR_ANCHOR_SMOOTHING = 0.35;
+
+const CALIBRATION_WIDTH_TOLERANCE = 0.15;
+const CALIBRATION_INDEX_TOLERANCE = 10;
+const CALIBRATION_RESET_KEEP = 6;
 
 const EAR_OUTWARD_OFFSET = 0.08;
 const EAR_DOWNWARD_OFFSET = 0.18;
 
 const EAR_VISIBILITY_THRESHOLD = 0.6;
 const NECK_OCCLUSION_THRESHOLD = 0.65;
+
+const MAX_MISSED_FACE_FRAMES = 10; // ~1/3s at 30fps before we reset calibration progress
+
+// Head-pose smoothing: lower = smoother but more lag (0.2–0.35 is a good range)
+const POSE_SMOOTHING = 0.25;
 
 /* =========================================================
    BASIC HELPERS
@@ -167,6 +176,16 @@ function calculateFullHeadPose(face, width, height, faceDetection) {
 
 function estimateHeadPose(face, width, height, faceDetection) {
   return calculateFullHeadPose(face, width, height, faceDetection);
+}
+
+function smoothPose(previous, next) {
+  if (!previous) return next;
+
+  return {
+    roll: previous.roll + (next.roll - previous.roll) * POSE_SMOOTHING,
+    yaw: previous.yaw + (next.yaw - previous.yaw) * POSE_SMOOTHING,
+    pitch: previous.pitch + (next.pitch - previous.pitch) * POSE_SMOOTHING
+  };
 }
 
 /* =========================================================
@@ -374,7 +393,7 @@ function isCalibrationSampleStable(samples, sample) {
   const widthShift = Math.abs(sample.faceWidth - previous.faceWidth) / Math.max(previous.faceWidth, 1);
   const indexShift = Math.abs(sample.facialIndex - previous.facialIndex);
 
-  return widthShift < 0.08 && indexShift < 6;
+  return widthShift < CALIBRATION_WIDTH_TOLERANCE && indexShift < CALIBRATION_INDEX_TOLERANCE;
 }
 
 /* =========================================================
@@ -409,7 +428,7 @@ function getAccessoryTransforms(face, width, height, accessory, calibration, fac
       {
         x: eyeCenterX - width / 2,
         y: height / 2 - eyeCenterY + height * (accessory.yOffset ?? 0),
-        drawWidth: clamp(faceWidth * 2.2, faceWidth * 1.6, faceWidth * 3.2),
+        drawWidth: clamp(faceWidth * 1.15, faceWidth * 0.95, faceWidth * 1.4),
         rotation: -eyeAngle,
         mirror: 1,
         holder: "center"
@@ -464,9 +483,9 @@ function getAccessoryTransforms(face, width, height, accessory, calibration, fac
     : earlobes.averageLength;
 
   const earringHeight = clamp(
-    (faceHeight * 0.26 + calibratedLobeLength * 1.45) * accessory.modelScale * calibratedRatioScale,
-    64,
-    170
+    (faceHeight * 0.16 + calibratedLobeLength * 0.9) * accessory.modelScale * calibratedRatioScale,
+    40,
+    110
   );
 
   return [
@@ -612,9 +631,8 @@ function resizeThreeScene(threeScene, width, height) {
    THREE.JS EARRING UPDATE
    ========================================================= */
 
-function updateThreeEarrings(threeScene, face, width, height, selectedAccessory, calibration, faceDetection) {
+function updateThreeEarrings(threeScene, face, width, height, selectedAccessory, calibration, faceDetection, pose) {
   const transforms = getAccessoryTransforms(face, width, height, selectedAccessory, calibration, faceDetection);
-  const pose = estimateHeadPose(face, width, height, faceDetection);
 
   for (const side of ["left", "right"]) {
     const model = threeScene.earrings[side];
@@ -640,15 +658,14 @@ function updateThreeEarrings(threeScene, face, width, height, selectedAccessory,
    THREE.JS ACCESSORY UPDATE
    ========================================================= */
 
-function updateThreeAccessory(threeScene, face, width, height, selectedAccessory, calibration, faceDetection) {
+function updateThreeAccessory(threeScene, face, width, height, selectedAccessory, calibration, faceDetection, pose) {
   if (selectedAccessory.placement === "ears") {
     threeScene.centerAccessory.visible = false;
-    updateThreeEarrings(threeScene, face, width, height, selectedAccessory, calibration, faceDetection);
+    updateThreeEarrings(threeScene, face, width, height, selectedAccessory, calibration, faceDetection, pose);
     return;
   }
 
   const transform = getAccessoryTransforms(face, width, height, selectedAccessory, calibration, faceDetection)[0];
-  const pose = estimateHeadPose(face, width, height, faceDetection);
 
   threeScene.earrings.left.visible = false;
   threeScene.earrings.right.visible = false;
@@ -674,8 +691,8 @@ function updateThreeAccessory(threeScene, face, width, height, selectedAccessory
    ========================================================= */
 
 function getPreviewScale(accessory) {
-  if (accessory.placement === "ears") return 1.05 * accessory.modelScale;
-  if (accessory.placement === "eyes") return 2.35 * accessory.modelScale;
+  if (accessory.placement === "ears") return 0.65 * accessory.modelScale;
+  if (accessory.placement === "eyes") return 1.3 * accessory.modelScale;
   if (accessory.placement === "neck") return 2.1 * accessory.modelScale;
   return 1.4 * accessory.modelScale;
 }
@@ -761,8 +778,10 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
 
   const earlobeMetricsRef = useRef({ distance: null, length: null });
   const smoothedEarlobesRef = useRef(null);
+  const smoothedPoseRef = useRef(null);
   const calibrationRef = useRef(null);
   const calibrationSamplesRef = useRef([]);
+  const missedFaceFramesRef = useRef(0);
 
   const [productStatus, setProductStatus] = useState("Loading product photo");
   const [earAnchorStatus, setEarAnchorStatus] = useState("Ear anchor: FaceMesh estimate");
@@ -804,6 +823,8 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
     modelLoadFailedRef.current = false;
     calibrationRef.current = null;
     calibrationSamplesRef.current = [];
+    missedFaceFramesRef.current = 0;
+    smoothedPoseRef.current = null;
 
     setCalibrationStatus({ state: "waiting", progress: 0 });
     setProductStatus(selectedAccessory.modelUrl ? "Loading 3D jewelry asset" : "Loading product photo");
@@ -940,7 +961,9 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
     const faceDetection = results.faceDetections?.[0];
 
     if (!face) {
-      if (!calibrationRef.current) {
+      missedFaceFramesRef.current += 1;
+
+      if (!calibrationRef.current && missedFaceFramesRef.current > MAX_MISSED_FACE_FRAMES) {
         calibrationSamplesRef.current = [];
         setCalibrationStatus((current) =>
           current.state === "waiting" && current.progress === 0 ? current : { state: "waiting", progress: 0 }
@@ -950,11 +973,17 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
       return;
     }
 
+    missedFaceFramesRef.current = 0;
+
     const faceMetrics = calculateFaceMetrics(face, width, height, faceDetection);
     const smoothedEarlobes = smoothEarlobeMetrics(smoothedEarlobesRef.current, faceMetrics.earlobes);
 
     smoothedEarlobesRef.current = smoothedEarlobes;
     faceMetrics.earlobes = smoothedEarlobes;
+
+    const rawPose = estimateHeadPose(face, width, height, faceDetection);
+    const pose = smoothPose(smoothedPoseRef.current, rawPose);
+    smoothedPoseRef.current = pose;
 
     setEarAnchorStatus(
       faceMetrics.earlobes.source === "face-detector-tragion"
@@ -974,18 +1003,14 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
 
     if (!calibration) {
       const sample = createCalibrationSample(faceMetrics);
-      const samples = calibrationSamplesRef.current;
+      calibrationSamplesRef.current.push(sample);
 
-      if (isCalibrationSampleStable(samples, sample)) {
-        samples.push(sample);
-      } else {
-        calibrationSamplesRef.current = [sample];
-      }
+      // Immediately usable estimate from the very first sample
+      calibration = averageCalibrationSamples(calibrationSamplesRef.current);
 
       const progress = Math.min(calibrationSamplesRef.current.length / CALIBRATION_SAMPLE_COUNT, 1);
 
       if (calibrationSamplesRef.current.length >= CALIBRATION_SAMPLE_COUNT) {
-        calibration = averageCalibrationSamples(calibrationSamplesRef.current);
         calibrationRef.current = calibration;
         isCalibrating = false;
         setCalibrationStatus({ state: "ready", progress: 1 });
@@ -994,14 +1019,13 @@ export default function ARCanvas({ selectedAccessoryId, onStatsChange }) {
       }
     }
 
+    // Always render with whatever calibration we have so far — no blocking gate.
     drawLandmarks(ctx, face, width, height);
 
-    if (!isCalibrating) {
-      if (threeModelReadyRef.current && threeSceneRef.current) {
-        updateThreeAccessory(threeSceneRef.current, face, width, height, selectedAccessory, calibration, faceDetection);
-      } else if (!selectedAccessory.modelUrl || modelLoadFailedRef.current) {
-        renderProductImage(ctx, face, width, height, calibration, faceDetection);
-      }
+    if (threeModelReadyRef.current && threeSceneRef.current) {
+      updateThreeAccessory(threeSceneRef.current, face, width, height, selectedAccessory, calibration, faceDetection, pose);
+    } else if (!selectedAccessory.modelUrl || modelLoadFailedRef.current) {
+      renderProductImage(ctx, face, width, height, calibration, faceDetection);
     }
 
     const now = performance.now();
